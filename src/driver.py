@@ -30,11 +30,10 @@ def parse_from_cmd():
     print("cmd")
     input_op = input()
     while(input_op!="exit"):
-        if(validate_cmd_input(input_op)) {
+        if(validate_cmd_input(input_op)):
             tm_obj.process(input_op)
-        } else {
+        else:
             print("Enter valid operation\n")
-        }
         input_op = input()
 
 
