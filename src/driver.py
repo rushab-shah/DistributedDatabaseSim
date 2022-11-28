@@ -6,10 +6,32 @@ import sys
 from transaction_manager import TransactionManager
 
 # Two Scenarios: File Input/ command line input
+tm_obj = TransactionManager()
 
 def main():
-    tm_obj = TransactionManager()
     tm_obj.hello()
+    if(len(sys.argv)<2):
+        parse_from_cmd()
+    else:
+        parse_from_file(sys.argv[1])
+
+def parse_from_file(file_path):
+    try:
+        print("File "+file_path)
+        input_file = open(file_path,'r')
+        for line in input_file:
+            tm_obj.process(line)
+        print("Read complete")
+        input_file.close()
+    except:
+        print("Invalid File Path")
+
+def parse_from_cmd():
+    print("cmd")
+    input_op = input()
+    while(input_op!="dump()"):
+        tm_obj.process(input_op)
+        input_op = input()
 
 if __name__ == "__main__":
     main()

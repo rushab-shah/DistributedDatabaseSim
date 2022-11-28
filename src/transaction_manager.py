@@ -9,5 +9,6 @@ class TransactionManager:
     def hello(self):
         print("Hello")
 
-    # def process(self,line):
+    def process(self,line):
+        print("Processing "+line)
         
