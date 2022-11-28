@@ -23,15 +23,24 @@ def parse_from_file(file_path):
             tm_obj.process(line)
         print("Read complete")
         input_file.close()
-    except:
+    except FileNotFoundError:
         print("Invalid File Path")
 
 def parse_from_cmd():
     print("cmd")
     input_op = input()
-    while(input_op!="dump()"):
-        tm_obj.process(input_op)
+    while(input_op!="exit"):
+        if(validate_cmd_input(input_op)) {
+            tm_obj.process(input_op)
+        } else {
+            print("Enter valid operation\n")
+        }
         input_op = input()
+
+
+def validate_cmd_input(line):
+    # TODO Add validation for input ops from cmd
+    return True
 
 if __name__ == "__main__":
     main()
