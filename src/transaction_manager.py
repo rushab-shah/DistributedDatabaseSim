@@ -14,6 +14,9 @@ class TransactionManager:
         if eachOperation.startswith() == "begin(":
             #initialise new transaction function
             print("Insert begin() function")
+        elif eachOperation.startswith() == "beginRO(":
+            #beginRO(T3) means T3 txn begins and is read only
+            print("Insert beginRO() function")
         elif eachOperation.startswith() == "fail(":
             #insert site fail function
             print("Site fail")
