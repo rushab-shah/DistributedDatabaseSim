@@ -34,7 +34,7 @@ class TransactionManager:
         return
 
     def initialize_site_variables(self,site_number):
-        print("Initializing Variables for Site "+site_number)
+        print("Initializing Variables for Site "+str(site_number))
         var_store = []
         for id in range(1,21):
             if id % 2 == 0:
@@ -90,14 +90,14 @@ class TransactionManager:
         if eachOperation.startswith("begin("):
             transactionNum = eachOperation[-3:-1]
             opType = eachOperation[:5]
-            print("Starting Transaction "+transactionNum)
+            print("Starting Transaction "+str(transactionNum))
             self.beginTransaction(transactionNum, self.time, opType)
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
             transactionNum = eachOperation[-3:-1]
             opType = eachOperation[:7]
-            print("Starting Read-Only Transaction "+transactionNum)
+            print("Starting Read-Only Transaction "+str(transactionNum))
             self.beginROTransaction(transactionNum, self.time, opType)
             # print("Insert beginRO() function")
 
@@ -112,7 +112,7 @@ class TransactionManager:
             else:
                 return
             self.fail(eachOperation[int(site)])
-            print("Site" +site +" fail")
+            print("Site" +str(site) +" fail")
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute write() function
@@ -137,7 +137,7 @@ class TransactionManager:
             else:
                 return
             self.recover(eachOperation[int(site)])
-            print("Site "+site+" Recovered")
+            print("Site "+str(site)+" Recovered")
 
 eachOperation = "begin(T1)"
 tm = TransactionManager()
