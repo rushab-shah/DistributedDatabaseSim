@@ -19,7 +19,8 @@ def parse_from_file(file_path):
         print("File "+file_path)
         input_file = open(file_path,'r')
         for line in input_file:
-            tm_obj.opProcess(line)
+            if(check_for_unnecessary_lines(line)):
+                tm_obj.opProcess(line)
         print("Read complete")
         input_file.close()
     except FileNotFoundError:
@@ -29,15 +30,17 @@ def parse_from_cmd():
     print("cmd")
     input_op = input()
     while(input_op!="exit"):
-        if(validate_cmd_input(input_op)):
+        if(check_for_unnecessary_lines(input_op)):
             tm_obj.opProcess(input_op)
         else:
             print("Enter valid operation\n")
         input_op = input()
 
 
-def validate_cmd_input(line):
+def check_for_unnecessary_lines(line):
     # TODO Add validation for input ops from cmd
+    if(line.startswith("//")) or line=="" or line.strip()=="":
+        return False
     return True
 
 if __name__ == "__main__":

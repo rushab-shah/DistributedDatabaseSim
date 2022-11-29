@@ -3,6 +3,7 @@ from operation import Operation
 from transaction import Transaction
 from data_manager import DataManager
 from variable import Variable
+import networkx as nx
 
 class TransactionManager:
     isReadOnly = False
@@ -13,8 +14,9 @@ class TransactionManager:
     activeTransactions = {}
     blockedTransactions = {}
     expiredTransactions = {}
-    dependency_graph = []
-    dependency_graph_nodes = {}
+    dependency_graph_edges = []
+    dependency_graph = nx.DiGraph()
+    
     time = 0
 
     ######################################################################
@@ -49,7 +51,6 @@ class TransactionManager:
         self.sites[site_number-1].set_var_array(var_store)
         return
 
-
     ######################################################################
     ## transaction start methods: beginTransaction, beginROTransaction
     ######################################################################
@@ -69,43 +70,29 @@ class TransactionManager:
 
 
     ######################################################################
-    ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks, visit node
+    ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks
     ######################################################################
     def add_dependency(self,requesting_transaction, holding_transaction):
         dependency = (requesting_transaction, holding_transaction)
-        self.dependency_graph.append(dependency)
-        self.dependency_graph_nodes.add(requesting_transaction)
-        self.dependency_graph_nodes.add(holding_transaction)
+        self.dependency_graph_edges.append(dependency)
+        self.dependency_graph.add_edge(requesting_transaction,holding_transaction)
         return
 
     def remove_dependency(self,requesting_transaction, holding_transaction):
-        result = [dependency for dependency in self.dependency_graph if dependency[0]==requesting_transaction
+        result = [dependency for dependency in self.dependency_graph_edges if dependency[0]==requesting_transaction
                     and dependency[1]==holding_transaction]
         if(len(result)==1):
-            self.dependency_graph.remove(result[0])
-            if(requesting_transaction in self.dependency_graph_nodes):
-                self.dependency_graph_nodes.remove(requesting_transaction)
-            if(holding_transaction in self.dependency_graph_nodes):
-                self.dependency_graph_nodes.remove(holding_transaction)
+            self.dependency_graph_edges.remove(result[0])
+            self.dependency_graph.remove_edge(requesting_transaction,holding_transaction)
         return
 
 
     def detect_deadlocks(self):
-        visited = [False for i in range(1,len(self.dependency_graph_nodes)+1)]
-        for edge in self.dependency_graph:
-            cycle_detected = self.visit(edge,visited)
-            if(cycle_detected):
-                return True
-            else:
-                visited = [False for i in range(1,len(self.dependency_graph_nodes)+1)]
-        return False
-    
-    def visit(self, edge, visited):
-        if(visited[edge[0]]==True):
+        cycles = nx.simple_cycles(self.dependency_graph)
+        if(len(list(cycles))):
             return True
-        else:
-            visited[edge[0]] = True
-            return self.visit(edge[1])
+        return False
+
 
     ######################################################################
     ## Transaction helper methods: get_transaction_age
@@ -134,7 +121,7 @@ class TransactionManager:
     ######################################################################
     ## Method to process op strings from file/cmd: opProcess
     ######################################################################
-    def opProcess(self,line):
+    def opProcess(self,eachOperation):
         self.time = self.time + 1
 
         ##### Begin() Transaction ######
@@ -175,7 +162,7 @@ class TransactionManager:
         
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
-            print("Transaction writes value to variable x_n")
+            print("Transaction ended")
         
         elif eachOperation.startswith("recover("):
             #eg. recover(2) => recover site 2.
@@ -194,6 +181,14 @@ class TransactionManager:
 ######################################################################
 ## Testing code
 ######################################################################
-eachOperation = "begin(T1)"
+# eachOperation = "begin(T1)"
 tm = TransactionManager()
-tm.opProcess(eachOperation)
+# tm.opProcess(eachOperation)
+
+tm.add_dependency(0,1)
+tm.add_dependency(0,2)
+tm.add_dependency(1,2)
+tm.add_dependency(2,0)
+print(tm.detect_deadlocks())
+
+
