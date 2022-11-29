@@ -9,6 +9,7 @@ class TransactionManager:
     time = 0
     def __init__(self) -> None:
         self.time = 0
+        self.time = 0
 
     def hello(self):
         print("Hello")
@@ -17,6 +18,10 @@ class TransactionManager:
         t = Operation(opType, time, transactionNumber)
         operationHistory.append(t)
         print(t.transactionNumber)
+        print(t.time)
+        
+    def detectDeadlocks():
+        return False
 
     def opProcess(self,line):
         self.time = self.time + 1
