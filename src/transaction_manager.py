@@ -4,6 +4,7 @@ class TransactionManager:
     wait_list = []
     time = 0
     def __init__(self) -> None:
+        self.time = 0
         print("Init")
 
     def initialize_replicas():
@@ -15,6 +16,11 @@ class TransactionManager:
     def hello(self):
         print("Hello")
 
+    def beginTransaction(self, transactionNumber, time, opType):
+        t = Operation(opType, time, transactionNumber)
+        operationHistory.append(t)
+        print(t.time)
+        
     def detectDeadlocks():
         return False
 
