@@ -17,7 +17,8 @@ class TransactionManager:
 
     def initialize_sites(self):
         for i in range(0,10):
-            site = DataManager(i)
+            # Because sites are numbered 1 onwards while array is 0 indexed
+            site = DataManager(i+1)
             self.sites.append(site)
         return
 
