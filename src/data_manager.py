@@ -23,5 +23,14 @@ class DataManager:
 
     def isDown(self):
         return self.is_down
+    
+    def add_var(self,variable):
+        self.var_store.append(variable)
+        return
+    
+    def set_var_array(self,var_array):
+        self.var_store = var_array
+        return
+
 
     

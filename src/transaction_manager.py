@@ -1,6 +1,10 @@
 
 from operation import Operation
 from transaction import Transaction
+from data_manager import DataManager
+from variable import Variable
+
+operationHistory = []
 
 class TransactionManager:
     isReadOnly = False
@@ -14,14 +18,32 @@ class TransactionManager:
     time = 0
 
     def __init__(self) -> None:
+        print("Initializing Transaction Manager")
         self.time = 0
         self.initialize_sites()
+        print("Transaction Manager Initialized")
 
     def initialize_sites(self):
+        print("Initializing Sites")
         for i in range(0,10):
             # Because sites are numbered 1 onwards while array is 0 indexed
             site = DataManager(i+1)
             self.sites.append(site)
+            self.initialize_site_variables(i+1)
+        print("Sites Initialized")
+        return
+
+    def initialize_site_variables(self,site_number):
+        print("Initializing Variables for Site "+site_number)
+        var_store = []
+        for id in range(1,21):
+            if id % 2 == 0:
+                var_obj = Variable(id*10,id)
+                var_store.append(var_obj)
+            elif site_number == (1 + id % 10):
+                var_obj = Variable(id*10,id)
+                var_store.append(var_obj)
+        self.sites[site_number-1].set_var_array(var_store)
         return
 
     def beginTransaction(self, transactionNumber, time, opType):
@@ -68,12 +90,14 @@ class TransactionManager:
         if eachOperation.startswith("begin("):
             transactionNum = eachOperation[-3:-1]
             opType = eachOperation[:5]
+            print("Starting Transaction "+transactionNum)
             self.beginTransaction(transactionNum, self.time, opType)
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
             transactionNum = eachOperation[-3:-1]
             opType = eachOperation[:7]
+            print("Starting Read-Only Transaction "+transactionNum)
             self.beginROTransaction(transactionNum, self.time, opType)
             # print("Insert beginRO() function")
 
@@ -88,7 +112,7 @@ class TransactionManager:
             else:
                 return
             self.fail(eachOperation[int(site)])
-            print("Site fail")
+            print("Site" +site +" fail")
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute write() function
@@ -113,7 +137,7 @@ class TransactionManager:
             else:
                 return
             self.recover(eachOperation[int(site)])
-            print("Recover site function to be executed")
+            print("Site "+site+" Recovered")
 
 eachOperation = "begin(T1)"
 tm = TransactionManager()
