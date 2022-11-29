@@ -2,13 +2,17 @@
 from operation import Operation
 from transaction import Transaction
 
-operationHistory = []
-
 class TransactionManager:
     isReadOnly = False
     processed_data = []
     wait_list = []
+    operationHistory = []
+    activeTransactions = []
+    blockedTransactions = []
+    expiredTransactions = []
+    
     time = 0
+
     def __init__(self) -> None:
         self.time = 0
 
@@ -18,13 +22,15 @@ class TransactionManager:
     def beginTransaction(self, transactionNumber, time, opType):
         o = Operation(opType, time, transactionNumber)
         t = Transaction(transactionNumber, time, isReadOnly=False)
-        operationHistory.append(o)
+        self.operationHistory.append(o)
+        self.activeTransactions.append(t)
         # print(t.isReadOnly)
     
     def beginROTransaction(self, transactionNumber, time, opType):
         o = Operation(opType, time, transactionNumber)
         t = Transaction(transactionNumber, time, isReadOnly=True)
-        operationHistory.append(o)
+        self.operationHistory.append(o)
+        self.activeTransactions.append(t)
         # print(t.isReadOnly)
 
     def detectDeadlocks():
