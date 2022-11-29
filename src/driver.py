@@ -19,7 +19,7 @@ def parse_from_file(file_path):
         print("File "+file_path)
         input_file = open(file_path,'r')
         for line in input_file:
-            tm_obj.process(line)
+            tm_obj.opProcess(line)
         print("Read complete")
         input_file.close()
     except FileNotFoundError:
@@ -30,7 +30,7 @@ def parse_from_cmd():
     input_op = input()
     while(input_op!="exit"):
         if(validate_cmd_input(input_op)):
-            tm_obj.process(input_op)
+            tm_obj.opProcess(input_op)
         else:
             print("Enter valid operation\n")
         input_op = input()

@@ -14,6 +14,7 @@ class TransactionManager:
     blockedTransactions = {}
     expiredTransactions = {}
     dependency_graph = []
+    dependency_graph_nodes = {}
     time = 0
 
     ######################################################################
@@ -68,11 +69,13 @@ class TransactionManager:
 
 
     ######################################################################
-    ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks
+    ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks, visit node
     ######################################################################
     def add_dependency(self,requesting_transaction, holding_transaction):
         dependency = (requesting_transaction, holding_transaction)
         self.dependency_graph.append(dependency)
+        self.dependency_graph_nodes.add(requesting_transaction)
+        self.dependency_graph_nodes.add(holding_transaction)
         return
 
     def remove_dependency(self,requesting_transaction, holding_transaction):
@@ -80,12 +83,29 @@ class TransactionManager:
                     and dependency[1]==holding_transaction]
         if(len(result)==1):
             self.dependency_graph.remove(result[0])
+            if(requesting_transaction in self.dependency_graph_nodes):
+                self.dependency_graph_nodes.remove(requesting_transaction)
+            if(holding_transaction in self.dependency_graph_nodes):
+                self.dependency_graph_nodes.remove(holding_transaction)
         return
 
 
-    def detect_deadlocks():
+    def detect_deadlocks(self):
+        visited = [False for i in range(1,len(self.dependency_graph_nodes)+1)]
+        for edge in self.dependency_graph:
+            cycle_detected = self.visit(edge,visited)
+            if(cycle_detected):
+                return True
+            else:
+                visited = [False for i in range(1,len(self.dependency_graph_nodes)+1)]
         return False
     
+    def visit(self, edge, visited):
+        if(visited[edge[0]]==True):
+            return True
+        else:
+            visited[edge[0]] = True
+            return self.visit(edge[1])
 
     ######################################################################
     ## Transaction helper methods: get_transaction_age
