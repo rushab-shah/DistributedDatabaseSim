@@ -5,6 +5,7 @@ operationHistory = []
 
 class TransactionManager:
     processed_data = []
+    wait_list = []
     time = 0
     def __init__(self) -> None:
         self.time = 0

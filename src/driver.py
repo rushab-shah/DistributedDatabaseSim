@@ -9,7 +9,6 @@ from transaction_manager import TransactionManager
 tm_obj = TransactionManager()
 
 def main():
-    tm_obj.hello()
     if(len(sys.argv)<2):
         parse_from_cmd()
     else:
