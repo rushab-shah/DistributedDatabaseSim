@@ -1,6 +1,7 @@
 
 from operation import Operation
 from transaction import Transaction
+from data_manager import DataManager
 
 operationHistory = []
 
@@ -8,12 +9,17 @@ class TransactionManager:
     isReadOnly = False
     processed_data = []
     wait_list = []
+    sites = []
     time = 0
     def __init__(self) -> None:
         self.time = 0
+        self.initialize_sites()
 
-    def hello(self):
-        print("Hello")
+    def initialize_sites(self):
+        for i in range(0,10):
+            site = DataManager(i)
+            self.sites.append(site)
+        return
 
     def beginTransaction(self, transactionNumber, time, opType):
         o = Operation(opType, time, transactionNumber)
@@ -29,6 +35,16 @@ class TransactionManager:
 
     def detectDeadlocks():
         return False
+    
+    def fail(self, index):
+        if index < len(self.sites):
+            self.sites[index-1].fail()
+        return
+
+    def recover(self, index):
+        if index < len(self.sites):
+            self.sites[index-1].recover()
+        return
 
     def opProcess(self,line):
         self.time = self.time + 1
@@ -48,6 +64,15 @@ class TransactionManager:
 
         elif eachOperation.startswith("fail("):
             #insert site fail function
+            temp = len(eachOperation)
+            site = None
+            if(temp==7):
+                site = eachOperation[5]
+            elif(temp==8):
+                site = eachOperation[5] +''+eachOperation[6]
+            else:
+                return
+            self.fail(eachOperation[int(site)])
             print("Site fail")
 
         elif eachOperation.startswith("R("):
@@ -64,6 +89,15 @@ class TransactionManager:
         
         elif eachOperation.startswith("recover("):
             #eg. recover(2) => recover site 2.
+            temp = len(eachOperation)
+            site = None
+            if(temp==7):
+                site = eachOperation[5]
+            elif(temp==8):
+                site = eachOperation[5] +''+eachOperation[6]
+            else:
+                return
+            self.recover(eachOperation[int(site)])
             print("Recover site function to be executed")
 
 eachOperation = "begin(T1)"
