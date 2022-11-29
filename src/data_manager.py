@@ -13,6 +13,14 @@ class DataManager:
         self.lock_table = []
         return
 
+    def fail(self):
+        self.is_down = True
+        return
+
+    def recover(self):
+        self.is_down = False
+        return
+
     def isDown(self):
         return self.is_down
 
