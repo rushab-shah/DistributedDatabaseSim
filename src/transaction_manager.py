@@ -4,19 +4,20 @@ from transaction import Transaction
 from data_manager import DataManager
 from variable import Variable
 
-operationHistory = []
-
 class TransactionManager:
     isReadOnly = False
     processed_data = []
     wait_list = []
     sites = []
     operationHistory = []
-    activeTransactions = []
-    blockedTransactions = []
-    expiredTransactions = []
+    activeTransactions = {}
+    blockedTransactions = {}
+    expiredTransactions = {}
     time = 0
 
+    ######################################################################
+    ## Initialization methods: __init__ , initialize_sites, initialize_site_variables
+    ######################################################################
     def __init__(self) -> None:
         print("Initializing Transaction Manager")
         self.time = 0
@@ -46,6 +47,10 @@ class TransactionManager:
         self.sites[site_number-1].set_var_array(var_store)
         return
 
+
+    ######################################################################
+    ## transaction start methods: beginTransaction, beginROTransaction
+    ######################################################################
     def beginTransaction(self, transactionNumber, time, opType):
         o = Operation(opType, time, transactionNumber)
         t = Transaction(transactionNumber, time, isReadOnly=False)
@@ -63,6 +68,20 @@ class TransactionManager:
     def detectDeadlocks():
         return False
     
+
+    ######################################################################
+    ## Transaction helper methods: get_transaction_age
+    ######################################################################
+    def get_transaction_age(self,transaction_number):
+        # fetch the transaction from list of active transactions
+        transaction_start_time = self.activeTransactions[transaction_number].beginTime
+        age = self.time - transaction_start_time
+        return age
+
+
+    ######################################################################
+    ## Site specific functions: fail, recover
+    ######################################################################
     def fail(self, index):
         if index < len(self.sites):
             self.sites[index-1].fail()
@@ -73,16 +92,10 @@ class TransactionManager:
             self.sites[index-1].recover()
         return
 
-    def fail(self, index):
-        if index < len(self.sites):
-            self.sites[index-1].fail()
-        return
 
-    def recover(self, index):
-        if index < len(self.sites):
-            self.sites[index-1].recover()
-        return
-
+    ######################################################################
+    ## Method to process op strings from file/cmd: opProcess
+    ######################################################################
     def opProcess(self,line):
         self.time = self.time + 1
 
@@ -139,6 +152,10 @@ class TransactionManager:
             self.recover(eachOperation[int(site)])
             print("Site "+str(site)+" Recovered")
 
+
+######################################################################
+## Testing code
+######################################################################
 eachOperation = "begin(T1)"
 tm = TransactionManager()
 tm.opProcess(eachOperation)
