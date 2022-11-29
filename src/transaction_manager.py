@@ -13,6 +13,7 @@ class TransactionManager:
     activeTransactions = {}
     blockedTransactions = {}
     expiredTransactions = {}
+    dependency_graph = []
     time = 0
 
     ######################################################################
@@ -55,17 +56,34 @@ class TransactionManager:
         o = Operation(opType, time, transactionNumber)
         t = Transaction(transactionNumber, time, isReadOnly=False)
         self.operationHistory.append(o)
-        self.activeTransactions.append(t)
+        self.activeTransactions[transactionNumber] = t
         # print(t.isReadOnly)
     
     def beginROTransaction(self, transactionNumber, time, opType):
         o = Operation(opType, time, transactionNumber)
         t = Transaction(transactionNumber, time, isReadOnly=True)
         self.operationHistory.append(o)
-        self.activeTransactions.append(t)
+        self.activeTransactions[transactionNumber] = t
         # print(t.isReadOnly)
 
-    def detectDeadlocks():
+
+    ######################################################################
+    ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks
+    ######################################################################
+    def add_dependency(self,requesting_transaction, holding_transaction):
+        dependency = (requesting_transaction, holding_transaction)
+        self.dependency_graph.append(dependency)
+        return
+
+    def remove_dependency(self,requesting_transaction, holding_transaction):
+        result = [dependency for dependency in self.dependency_graph if dependency[0]==requesting_transaction
+                    and dependency[1]==holding_transaction]
+        if(len(result)==1):
+            self.dependency_graph.remove(result[0])
+        return
+
+
+    def detect_deadlocks():
         return False
     
 
