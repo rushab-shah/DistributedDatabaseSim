@@ -1,13 +1,22 @@
 
 class TransactionManager:
     processed_data = []
+    wait_list = []
     time = 0
     def __init__(self) -> None:
         print("Init")
 
+    def initialize_replicas():
+        return
+
+    def initialize_variables():
+        return
 
     def hello(self):
         print("Hello")
+
+    def detectDeadlocks():
+        return False
 
     def opProcess(self,line):
         time = time + 1
