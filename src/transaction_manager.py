@@ -4,6 +4,7 @@ from operation import Operation
 operationHistory = []
 
 class TransactionManager:
+    isReadOnly = False
     processed_data = []
     wait_list = []
     time = 0
@@ -17,7 +18,12 @@ class TransactionManager:
         t = Operation(opType, time, transactionNumber)
         operationHistory.append(t)
         print(t.transactionNumber)
-        
+    
+    def beginROTransaction(self, transactionNumber, time, opType):
+        t = Operation(opType, time, transactionNumber, isReadOnly=True)
+        operationHistory.append(t)
+        print(t.transactionNumber)
+
     def detectDeadlocks():
         return False
 
@@ -32,7 +38,10 @@ class TransactionManager:
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
-            print("Insert beginRO() function")
+            transactionNum = eachOperation[-3:-1]
+            opType = eachOperation[:7]
+            self.beginROTransaction(transactionNum, self.time, opType)
+            # print("Insert beginRO() function")
 
         elif eachOperation.startswith("fail("):
             #insert site fail function
@@ -54,6 +63,6 @@ class TransactionManager:
             #eg. recover(2) => recover site 2.
             print("Recover site function to be executed")
 
-eachOperation = "begin(T1)"
+eachOperation = "beginRO(T1)"
 tm = TransactionManager()
 tm.opProcess(eachOperation)
