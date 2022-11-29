@@ -1,5 +1,6 @@
 
 from operation import Operation
+from transaction import Transaction
 
 operationHistory = []
 
@@ -15,14 +16,16 @@ class TransactionManager:
         print("Hello")
 
     def beginTransaction(self, transactionNumber, time, opType):
-        t = Operation(opType, time, transactionNumber)
-        operationHistory.append(t)
-        print(t.transactionNumber)
+        o = Operation(opType, time, transactionNumber)
+        t = Transaction(transactionNumber, time, isReadOnly=False)
+        operationHistory.append(o)
+        # print(t.isReadOnly)
     
     def beginROTransaction(self, transactionNumber, time, opType):
-        t = Operation(opType, time, transactionNumber, isReadOnly=True)
-        operationHistory.append(t)
-        print(t.transactionNumber)
+        o = Operation(opType, time, transactionNumber)
+        t = Transaction(transactionNumber, time, isReadOnly=True)
+        operationHistory.append(o)
+        # print(t.isReadOnly)
 
     def detectDeadlocks():
         return False
@@ -63,6 +66,6 @@ class TransactionManager:
             #eg. recover(2) => recover site 2.
             print("Recover site function to be executed")
 
-eachOperation = "beginRO(T1)"
+eachOperation = "begin(T1)"
 tm = TransactionManager()
 tm.opProcess(eachOperation)

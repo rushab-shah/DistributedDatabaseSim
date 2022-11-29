@@ -6,11 +6,4 @@ class Operation:
     self.variable = variable
     self.variableValue = variableValue
     self.time = time
-    self.isReadOnly = isReadOnly
-
-  def checkIsReadOnly(self):
-    if self.opType == "beginRO":
-      self.isReadOnly = True
-    elif self.opType == "begin":
-      self.isReadOnly = False
       
