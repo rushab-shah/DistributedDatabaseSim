@@ -15,7 +15,7 @@ class TransactionManager:
     def beginTransaction(self, transactionNumber, time, opType):
         t = Operation(opType, time, transactionNumber)
         operationHistory.append(t)
-        print(t.time)
+        print(t.transactionNumber)
 
     def opProcess(self,line):
         self.time = self.time + 1
