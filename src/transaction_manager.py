@@ -58,16 +58,16 @@ class TransactionManager:
     ######################################################################
     ## transaction start methods: beginTransaction, beginROTransaction
     ######################################################################
-    def beginTransaction(self, transactionNumber, time, opType):
-        o = Operation(opType, time, transactionNumber)
-        t = Transaction(transactionNumber, time, isReadOnly=False)
+    def beginTransaction(self, transactionNumber, opType):
+        o = Operation(opType, self.time, transactionNumber)
+        t = Transaction(transactionNumber, beginTime=self.time, isReadOnly=False)
         self.operationHistory.append(o)
         self.activeTransactions[transactionNumber] = t
         # print(t.isReadOnly)
     
-    def beginROTransaction(self, transactionNumber, time, opType):
-        o = Operation(opType, time, transactionNumber)
-        t = Transaction(transactionNumber, time, isReadOnly=True)
+    def beginROTransaction(self, transactionNumber, opType):
+        o = Operation(opType, self.time, transactionNumber)
+        t = Transaction(transactionNumber, beginTime=self.time, isReadOnly=True)
         self.operationHistory.append(o)
         self.activeTransactions[transactionNumber] = t
         # print(t.isReadOnly)
@@ -75,18 +75,25 @@ class TransactionManager:
     ######################################################################
     ## transaction start methods: Read/Write Methods
     ######################################################################
-    def readValue(self, transactionNum, variableName):
+    def readValue(self, opType, transactionNum, variable_Name):
         currLock = LockMechanism()
-        isLockNotAvailable = currLock.has_lock(transactionNum, variableName)
-        if isLockNotAvailable:
+        isWriteLocked = currLock.is_write_locked(variable_Name, self.sites)
+        o = Operation(opType, self.time, transactionNum)
+        t = Transaction(transactionNum, self.time)
+        self.operationHistory.append(o)
+
+        if isWriteLocked:
             #Set lock for transaction txn to R
-            return "Not Available"
-        return False
-    
-    def readOp(self, transactionNum, variableName):
+            self.blockedTransactions[transactionNum] = t
+            self.add_dependency(transactionNum, holding_transaction)
+        else:
+            currLock.get_read_lock(transactionNum, variable_Name, self.sites)
+
+
+    def readOp(self, opType, transactionNum, variableName):
         if transactionNum in self.activeTransactions.keys():
             # print(self.activeTransactions.values())
-            self.readValue(transactionNum, variableName)
+            self.readValue(opType, transactionNum, variableName)
 
     ######################################################################
     ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks
@@ -194,9 +201,10 @@ class TransactionManager:
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute write() function
             split_readOp = eachOperation.split(",")
+            opType = eachOperation[0]
             txn = split_readOp[0][2:]
-            var_x = eachOperation[:-1]
-            self.readOp(txn, var_x)
+            var_x = split_readOp[1][1:-1]
+            self.readOp(opType, txn, var_x)
             print("Transaction reads x_n")
 
         elif eachOperation.startswith("W("):
