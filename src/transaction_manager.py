@@ -3,7 +3,6 @@ from operation import Operation
 from transaction import Transaction
 from data_manager import DataManager
 from variable import Variable
-from lock import LockType
 from lock import Lock
 from lock_mechanism import LockMechanism
 import networkx as nx
@@ -14,6 +13,7 @@ class TransactionManager:
     wait_list = []
     sites = []
     operationHistory = []
+    blockedOperations = []
     activeTransactions = {}
     blockedTransactions = {}
     expiredTransactions = {}
@@ -92,6 +92,7 @@ class TransactionManager:
             if prevLockTransaction != None:
                 #Set lock for transaction txn to R
                 self.blockedTransactions[transactionNum] = t
+                self.blockedOperations.append(o)
                 self.add_dependency(transactionNum, prevLockTransaction.transaction)
             else:
                 currLock.get_read_lock(transactionNum, variable_Name, self.sites)
