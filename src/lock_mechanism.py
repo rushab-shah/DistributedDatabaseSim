@@ -11,29 +11,50 @@ class LockMechanism:
         present_all_sites = False
         if variable%2 ==0:
             present_all_sites = True
-        return False
+        if present_all_sites:
+            for site in sites:
+                for lock in site.lock_table:
+                    if lock.variable == variable and lock.transaction == transaction_number:
+                        return lock
+        else:
+            site_num = 1 + variable%10
+            for lock in sites[site_num-1].lock_table:
+                if lock.variable == variable and lock.transaction == transaction_number:
+                    return lock
+        return None
 
-    def get_read_lock(self, transaction_number, variable, sites):
+    def get_lock(self, lock_type, transaction_number, variable, sites):
+        # lock_type = 0 : read; lock_type = 1 : write
         # First check which site is up. In order
         all_sites = False
         if variable%2 ==0:
             all_sites = True
         if all_sites:
-            index = 0
+            index = -1
             for i in range(0,len(sites)):
                 if sites[i].isSiteDown() != True:
                     index = i
                     break
-            lock = Lock(0,variable,index+1,transaction_number)
+            if index == -1:
+                return None
+            lock = Lock(lock_type,variable,index+1,transaction_number)
+            print("Obtaining "+str(lock_type)+" lock for "+str(transaction_number)+" for variable x"+str(variable) +" at site "+str(index+1))
             sites[i].lock_table.append(lock)
-        #TODO should return lock object or not?
-        return
+            return lock
+        else:
+            site_num = (1+ variable%10)
+            if(sites[site_num-1].isSiteDown() != True):
+                lock = Lock(lock_type,variable,site_num,transaction_number)
+                sites[site_num-1].lock_table.append(lock)
+                print("Obtaining "+str(lock_type)+" lock for "+str(transaction_number)+" for variable x"+str(variable) +" at site "+str(site_num))
+                return lock
+            else:
+                return None
     
-    def get_write_lock(self, transaction_number, variable, sites):
-        return
 
-    def promote_lock(self,transaction_number, variable):
-        self.get_write_lock(transaction_number,variable)
+    def promote_lock(self,transaction_number, variable,sites):
+        # self.get_lock(1,transaction_number,variable,sites)
+        ## Just change lock type to write
         return
 
     def release_lock(self,transaction_number, variable, sites):

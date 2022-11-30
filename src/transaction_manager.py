@@ -42,7 +42,7 @@ class TransactionManager:
         return
 
     def initialize_site_variables(self,site_number):
-        print("Initializing Variables for Site "+str(site_number))
+        # print("Initializing Variables for Site "+str(site_number))
         var_store = []
         for id in range(1,21):
             if id % 2 == 0:
@@ -140,7 +140,7 @@ class TransactionManager:
         return
 
     ######################################################################
-    ## transaction end methods: end transaction, abort
+    ## transaction end methods: end transaction, abort, commit, can commit
     ######################################################################
     def end_transaction(self,transaction_number):
         if(self.can_commit(transaction_number)):
@@ -150,11 +150,25 @@ class TransactionManager:
             self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
             self.abort(transaction_number)
             print("Transaction "+str(transaction_number)+" aborted")
+
+        ## Release all locks for transaction_number
+        locker = LockMechanism()
+        locker.release_all_locks(transaction_number,self.sites)
+
         return
     
     def abort(self, transaction_number):
         #TODO STUFF
         return
+
+    def commit(self, transaction_number):
+        #TODO STUFF
+        return
+    
+    def can_commit(self, transaction_number):
+        ##TODO CHECK IF TRANSACTION CAN COMMIT
+        return False
+
 
     ######################################################################
     ## Transaction helper methods: get_transaction_age, extract id from op
@@ -164,10 +178,6 @@ class TransactionManager:
         transaction_start_time = self.activeTransactions[transaction_number].beginTime
         age = self.time - transaction_start_time
         return age
-
-    def can_commit(self, transaction_number):
-        ##TODO CHECK IF TRANSACTION CAN COMMIT
-        return False
     
     def extract_id_from_operation(self, operation):
         temp = len(operation)
@@ -206,14 +216,14 @@ class TransactionManager:
             transactionNum = (eachOperation.split("("))[1][:-2]
             opType = eachOperation[:5]
             print("Starting Transaction "+str(transactionNum))
-            self.beginTransaction(transactionNum, self.time, opType)
+            self.beginTransaction(transactionNum, opType)
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
             transactionNum = (eachOperation.split("("))[1][:-2]
             opType = eachOperation[:7]
             print("Starting Read-Only Transaction "+str(transactionNum))
-            self.beginROTransaction(transactionNum, self.time, opType)
+            self.beginROTransaction(transactionNum, opType)
             # print("Insert beginRO() function")
 
         elif eachOperation.startswith("fail("):
@@ -237,8 +247,9 @@ class TransactionManager:
         
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
-            self.end_transaction()
-            print("Transaction ended")
+            ### Get transaction id
+            self.end_transaction((eachOperation.split("("))[1][:-2])
+            print("Transaction " +str((eachOperation.split("("))[1][:-2])+" ended")
         
         elif eachOperation.startswith("recover("):
             #eg. recover(2) => recover site 2.
@@ -258,13 +269,13 @@ class TransactionManager:
 ## Testing code
 ######################################################################
 # eachOperation = "R(T1)"
-tm = TransactionManager()
+# tm = TransactionManager()s
 # tm.opProcess(eachOperation)
 
-tm.add_dependency(0,1)
-tm.add_dependency(0,2)
-tm.add_dependency(1,2)
-tm.add_dependency(2,0)
-print(tm.detect_deadlocks())
+# tm.add_dependency(0,1)
+# tm.add_dependency(0,2)
+# tm.add_dependency(1,2)
+# tm.add_dependency(2,0)
+# print(tm.detect_deadlocks())
 
 
