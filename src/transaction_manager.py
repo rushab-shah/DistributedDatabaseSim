@@ -6,7 +6,6 @@ from variable import Variable
 from lock import LockType
 from lock import Lock
 from lock_mechanism import LockMechanism
-
 import networkx as nx
 
 class TransactionManager:
@@ -119,8 +118,19 @@ class TransactionManager:
             return True
         return False
 
+    def handle_deadlock(self):
+        # Abort the youngest transaction
+        min_age = 99999999
+        transaction_to_abort = -1
+        for tnum in self.activeTransactions.keys():
+            if self.get_transaction_age(tnum) < min_age:
+                min_age = self.get_transaction_age(tnum)
+                transaction_to_abort = tnum
+        self.abort(transaction_to_abort)
+        return
+
     ######################################################################
-    ## transaction start methods: beginTransaction, beginROTransaction
+    ## transaction end methods: end transaction, abort
     ######################################################################
     def end_transaction(self,transaction_number):
         if(self.can_commit(transaction_number)):
@@ -128,8 +138,12 @@ class TransactionManager:
             print("Transaction "+str(transaction_number)+" ended")
         else:
             self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
+            self.abort(transaction_number)
             print("Transaction "+str(transaction_number)+" aborted")
-            ##TODO add method to abort
+        return
+    
+    def abort(self, transaction_number):
+        #TODO STUFF
         return
 
     ######################################################################
@@ -142,7 +156,7 @@ class TransactionManager:
         return age
 
     def can_commit(self, transaction_number):
-
+        ##TODO CHECK IF TRANSACTION CAN COMMIT
         return False
     
     def extract_id_from_operation(self, operation):
