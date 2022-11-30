@@ -76,8 +76,8 @@ class TransactionManager:
     ## transaction start methods: Read/Write Methods
     ######################################################################
     def readValue(self, transactionNum, variableName):
-        currLock = LockMechanism(transactionNum, variableName)
-        isLockNotAvailable = currLock.has_lock()
+        currLock = LockMechanism()
+        isLockNotAvailable = currLock.has_lock(transactionNum, variableName)
         if isLockNotAvailable:
             #Set lock for transaction txn to R
             return "Not Available"
