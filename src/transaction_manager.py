@@ -72,7 +72,7 @@ class TransactionManager:
         # print(t.isReadOnly)
 
     ######################################################################
-    ## transaction start methods: Read/Write Methods
+    ## transaction start methods: Read Operation Methods
     ######################################################################
     def readValue(self, opType, transactionNum, variable_Name):
         currLock = LockMechanism()
@@ -116,6 +116,25 @@ class TransactionManager:
         if transactionNum in self.activeTransactions.keys():
             # print(self.activeTransactions.values())
             self.readValue(opType, transactionNum, variableName)
+
+
+    ######################################################################
+    ## transaction start methods: Write Operation Methods
+    ######################################################################
+    def writeValue(self, opType, transaction_num, variable_name, x_value):
+        o = Operation(opType, self.time, transaction_num)
+        self.operationHistory.append(o)
+        
+        #Check for locks
+        currLock = LockMechanism()
+        var_lock = currLock.has_lock(transaction_num, variable_name, self.sites)
+        
+    
+    def writeOp(self, opType, transaction_num, variable_name, x_value ):
+        #Check for locks, check if site is available, else write on other sites
+        if transaction_num in self.activeTransactions.keys():
+            self.writeValue(opType, transaction_num, variable_name, x_value)
+        return False
 
     ######################################################################
     ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks
@@ -256,6 +275,12 @@ class TransactionManager:
 
         elif eachOperation.startswith("W("):
             #Write operation. eg. W(T2,x8,88) . Execute write() function
+            split_writeOp = eachOperation.split(",")
+            opType = eachOperation[0]
+            txn = split_writeOp[0][2:]
+            var_x = split_writeOp[1][1:]
+            write_val = split_writeOp[2][:-1]
+            self.writeOp(opType, txn, var_x, write_val)
             print("Transaction writes value to variable x_n")
         
         elif eachOperation.startswith("end("):
