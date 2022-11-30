@@ -112,15 +112,42 @@ class TransactionManager:
             return True
         return False
 
+    ######################################################################
+    ## transaction start methods: beginTransaction, beginROTransaction
+    ######################################################################
+    def end_transaction(self,transaction_number):
+        if(self.can_commit(transaction_number)):
+            self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
+            print("Transaction "+str(transaction_number)+" ended")
+        else:
+            self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
+            print("Transaction "+str(transaction_number)+" aborted")
+            ##TODO add method to abort
+        return
 
     ######################################################################
-    ## Transaction helper methods: get_transaction_age
+    ## Transaction helper methods: get_transaction_age, extract id from op
     ######################################################################
     def get_transaction_age(self,transaction_number):
         # fetch the transaction from list of active transactions
         transaction_start_time = self.activeTransactions[transaction_number].beginTime
         age = self.time - transaction_start_time
         return age
+
+    def can_commit(self, transaction_number):
+
+        return False
+    
+    def extract_id_from_operation(self, operation):
+        temp = len(operation)
+        site = None
+        if(temp==7):
+            site = operation[5]
+        elif(temp==8):
+            site = operation[5] +''+operation[6]
+        else:
+            return site
+        return site
 
 
     ######################################################################
@@ -160,14 +187,7 @@ class TransactionManager:
 
         elif eachOperation.startswith("fail("):
             #insert site fail function
-            temp = len(eachOperation)
-            site = None
-            if(temp==7):
-                site = eachOperation[5]
-            elif(temp==8):
-                site = eachOperation[5] +''+eachOperation[6]
-            else:
-                return
+            site = self.extract_id_from_operation(eachOperation)
             self.fail(eachOperation[int(site)])
             print("Site" +str(site) +" fail")
 
@@ -185,6 +205,7 @@ class TransactionManager:
         
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
+            self.end_transaction()
             print("Transaction ended")
         
         elif eachOperation.startswith("recover("):
