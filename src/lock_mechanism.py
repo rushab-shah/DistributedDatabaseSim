@@ -21,7 +21,7 @@ class LockMechanism:
         if all_sites:
             index = 0
             for i in range(0,len(sites)):
-                if sites[i].isDown() != True:
+                if sites[i].isSiteDown() != True:
                     index = i
                     break
             lock = Lock(0,variable,index+1,transaction_number)

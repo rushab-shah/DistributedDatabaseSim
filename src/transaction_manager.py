@@ -76,17 +76,26 @@ class TransactionManager:
     ######################################################################
     def readValue(self, opType, transactionNum, variable_Name):
         currLock = LockMechanism()
-        isWriteLocked = currLock.is_write_locked(variable_Name, self.sites)
+        # Check if transactionNum has write or read lock using currLock.has_lock(). 
+        # Response will be a lock object or None
+        # If None check if any other transaction has a "Write" lock using currLock.is_write_locked()
+        # Response again will be a lock obj or None
+        # In this case if response is None, go ahead and get a read lock using currLock.get_read_lock()
+        # Else use the lock obj to determine who has the lock then block transaction and add depende.
+        hasLock = currLock.has_lock(transactionNum, variable_Name, self.sites)
         o = Operation(opType, self.time, transactionNum)
         t = Transaction(transactionNum, self.time)
         self.operationHistory.append(o)
 
-        if isWriteLocked:
-            #Set lock for transaction txn to R
-            self.blockedTransactions[transactionNum] = t
-            self.add_dependency(transactionNum, holding_transaction)
-        else:
-            currLock.get_read_lock(transactionNum, variable_Name, self.sites)
+        if hasLock == None:
+            prevLockTransaction = currLock.is_write_locked(variable_Name, self.sites)
+            if prevLockTransaction != None:
+                #Set lock for transaction txn to R
+                self.blockedTransactions[transactionNum] = t
+                self.add_dependency(transactionNum, prevLockTransaction.transaction)
+            else:
+                currLock.get_read_lock(transactionNum, variable_Name, self.sites)
+        
 
 
     def readOp(self, opType, transactionNum, variableName):

@@ -21,7 +21,7 @@ class DataManager:
         self.is_down = False
         return
 
-    def isDown(self):
+    def isSiteDown(self):
         return self.is_down
     
     def add_var(self,variable):
