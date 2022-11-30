@@ -85,7 +85,7 @@ class TransactionManager:
         hasLock = currLock.has_lock(transactionNum, variable_Name, self.sites)
         o = Operation(opType, self.time, transactionNum)
         t = Transaction(transactionNum, self.time)
-        self.operationHistory.append(o)
+        # self.operationHistory.append(o)
 
         if hasLock == None:
             prevLockTransaction = currLock.is_write_locked(variable_Name, self.sites)
@@ -95,8 +95,21 @@ class TransactionManager:
                 self.blockedOperations.append(o)
                 self.add_dependency(transactionNum, prevLockTransaction.transaction)
             else:
-                currLock.get_read_lock(transactionNum, variable_Name, self.sites)
-        
+                read_lock = currLock.get_lock(0,transactionNum, variable_Name, self.sites)
+                if read_lock != None:
+                    print("")
+                    # READ
+                else:
+                    # Block or Abort?
+                    print("Blocked")
+                    self.blockedTransactions[transactionNum] = t
+                    self.blockedOperations.append(o)
+                    #block
+        else:
+            print("")
+            # have a lock so read
+            # READ
+        return
 
 
     def readOp(self, opType, transactionNum, variableName):
