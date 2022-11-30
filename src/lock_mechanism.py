@@ -6,7 +6,8 @@ class LockMechanism:
 
     # Methods might include has a lock ,get a lock, release lock, release all locks, promote lock, check if lock exists
 
-    def has_lock(self, transaction_number, variable):
+    def has_lock(self, transaction_number, variable, sites):
+
         return False
 
     def get_read_lock(self, transaction_number, variable):
@@ -25,5 +26,8 @@ class LockMechanism:
     def release_all_locks(self, transaction_number):
         return
     
-    def is_locked(self, variable):
+    def is_read_locked(self, variable, sites):
+        return
+    
+    def is_write_locked(self, variable, sites):
         return
