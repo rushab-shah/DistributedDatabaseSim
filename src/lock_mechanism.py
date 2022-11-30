@@ -40,12 +40,12 @@ class LockMechanism:
         if present_all_sites:
             lock = []
             for site in sites:
-                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.type==1]
+                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==0]
                 if(len(lock)>0):
                     return True
         else:
             site_number = 1 + variable%10
-            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.type==1]
+            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==0]
             if(len(lock)>0):
                 return True
         return False
@@ -57,12 +57,12 @@ class LockMechanism:
         if present_all_sites:
             lock = []
             for site in sites:
-                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.type==2]
+                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==1]
                 if(len(lock)>0):
                     return True
         else:
             site_number = 1 + variable%10
-            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.type==2]
+            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==1]
             if(len(lock)>0):
                 return True
         return False
