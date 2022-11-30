@@ -3,6 +3,10 @@ from operation import Operation
 from transaction import Transaction
 from data_manager import DataManager
 from variable import Variable
+from lock import LockType
+from lock import Lock
+from lock_mechanism import LockMechanism
+
 import networkx as nx
 
 class TransactionManager:
@@ -68,6 +72,21 @@ class TransactionManager:
         self.activeTransactions[transactionNumber] = t
         # print(t.isReadOnly)
 
+    ######################################################################
+    ## transaction start methods: Read/Write Methods
+    ######################################################################
+    def readValue(self, transactionNum, variableName):
+        currLock = LockMechanism(transactionNum, variableName)
+        isLockNotAvailable = currLock.has_lock()
+        if isLockNotAvailable:
+            #Set lock for transaction txn to R
+            return "Not Available"
+        return False
+    
+    def readOp(self, transactionNum, variableName):
+        if transactionNum in self.activeTransactions.keys():
+            # print(self.activeTransactions.values())
+            self.readValue(transactionNum, variableName)
 
     ######################################################################
     ## deadlock detection: add_dependency, remove_dependency,  detect deadlocks
@@ -126,14 +145,14 @@ class TransactionManager:
 
         ##### Begin() Transaction ######
         if eachOperation.startswith("begin("):
-            transactionNum = eachOperation[-3:-1]
+            transactionNum = (eachOperation.split("("))[1][:-2]
             opType = eachOperation[:5]
             print("Starting Transaction "+str(transactionNum))
             self.beginTransaction(transactionNum, self.time, opType)
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
-            transactionNum = eachOperation[-3:-1]
+            transactionNum = (eachOperation.split("("))[1][:-2]
             opType = eachOperation[:7]
             print("Starting Read-Only Transaction "+str(transactionNum))
             self.beginROTransaction(transactionNum, self.time, opType)
@@ -154,6 +173,10 @@ class TransactionManager:
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute write() function
+            split_readOp = eachOperation.split(",")
+            txn = split_readOp[0][2:]
+            var_x = eachOperation[:-1]
+            self.readOp(txn, var_x)
             print("Transaction reads x_n")
 
         elif eachOperation.startswith("W("):
@@ -181,7 +204,7 @@ class TransactionManager:
 ######################################################################
 ## Testing code
 ######################################################################
-# eachOperation = "begin(T1)"
+# eachOperation = "R(T1)"
 tm = TransactionManager()
 # tm.opProcess(eachOperation)
 
