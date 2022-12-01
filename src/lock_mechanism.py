@@ -9,7 +9,7 @@ class LockMechanism:
 
     def has_lock(self, transaction_number, variable, sites):
         present_all_sites = False
-        if variable%2 ==0:
+        if int(variable) % 2 ==0:
             present_all_sites = True
         if present_all_sites:
             for site in sites:
@@ -17,7 +17,7 @@ class LockMechanism:
                     if lock.variable == variable and lock.transaction == transaction_number:
                         return lock
         else:
-            site_num = 1 + variable%10
+            site_num = 1 + int(variable)%10
             for lock in sites[site_num-1].lock_table:
                 if lock.variable == variable and lock.transaction == transaction_number:
                     return lock
@@ -27,7 +27,7 @@ class LockMechanism:
         # lock_type = 0 : read; lock_type = 1 : write
         # First check which site is up. In order
         all_sites = False
-        if variable%2 ==0:
+        if int(variable) % 2 ==0:
             all_sites = True
         if all_sites:
             index = -1
@@ -42,7 +42,7 @@ class LockMechanism:
             sites[i].lock_table.append(lock)
             return lock
         else:
-            site_num = (1+ variable%10)
+            site_num = (1+ int(variable)%10)
             if(sites[site_num-1].isSiteDown() != True):
                 lock = Lock(lock_type,variable,site_num,transaction_number)
                 sites[site_num-1].lock_table.append(lock)
@@ -73,17 +73,18 @@ class LockMechanism:
         if variable%2 ==0:
             present_all_sites = True
         if present_all_sites:
-            lock = []
+            locks = []
             for site in sites:
-                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==0]
-                if(len(lock)>0):
-                    return True
+                temp = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==0]
+                if(len(temp)>0):
+                    locks.append(temp)
+            return locks
         else:
             site_number = 1 + variable%10
-            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==0]
-            if(len(lock)>0):
-                return True
-        return False
+            locks = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==0]
+            if(len(locks)>0):
+                return locks
+        return []
     
     def is_write_locked(self, variable, sites):
         present_all_sites = False

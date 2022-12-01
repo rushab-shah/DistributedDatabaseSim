@@ -5,5 +5,12 @@ class Transaction:
     self.beginTime = beginTime
     self.endTime = endTime
     self.isReadOnly = isReadOnly
+    self.to_commit = []
 
-      
+  def add_to_commit(self, operation):
+    self.to_commit.append(operation)
+    return
+
+  def clear_commit(self):
+    self.to_commit = []
+    return
