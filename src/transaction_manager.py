@@ -176,31 +176,57 @@ class TransactionManager:
     ######################################################################
     def end_transaction(self,transaction_number):
         if(self.can_commit(transaction_number)):
-            self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
-            print("Transaction "+str(transaction_number)+" ended")
+            t = self.activeTransactions.pop(transaction_number)
+            self.commit(t)
+            self.expiredTransactions[transaction_number] = t
         else:
-            self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
             self.abort(transaction_number)
+            self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
             print("Transaction "+str(transaction_number)+" aborted")
 
         ## Release all locks for transaction_number
         locker = LockMechanism()
         locker.release_all_locks(transaction_number,self.sites)
-
         return
     
     def abort(self, transaction_number):
         #TODO STUFF
+        # self.activeTransactions[transaction_number]
         return
 
-    def commit(self, transaction_number):
-        #TODO STUFF
+    def commit(self, transaction):
+        for write_op in transaction.to_commit:
+            variable = write_op.variable
+            variable_val  = write_op.variableValue
+            if variable % 2 ==0:
+                for site in self.sites:
+                    target_var = [v for v in site.var_store if v.id == variable]
+                    if(len(target_var)==1):
+                        index = site.var_store.index(target_var[0])
+                        site.var_store[index].value = variable_val
+            else:
+                site_num = 1 + variable%10
+                target_var = [v for v in self.sites[site_num-1].var_store if v.id == variable]
+                if(len(target_var)==1):
+                    index = self.sites[site_num-1].var_store.index(target_var[0])
+                    self.sites[site_num-1].var_store[index].value = variable_val
+        print("Transaction "+str(transaction.transactionNumber)+" commited")
         return
     
     def can_commit(self, transaction_number):
-        ##TODO CHECK IF TRANSACTION CAN COMMIT
-        return False
+        ##TODO Need to check for odd even variable ids?
+        for site in self.sites:
+            if site.isSiteDown() == True:
+                return False
+        return True
 
+    def dump(self):
+        for site in self.sites:
+            dump_str = "site "+str(site.site_number)+" - "
+            for variable in site.var_store:
+                dump_str += "x"+str(variable.id) +": "+str(variable.value)+", "
+            print(dump_str)
+        return
 
     ######################################################################
     ## Transaction helper methods: get_transaction_age, extract id from op
@@ -229,11 +255,13 @@ class TransactionManager:
     def fail(self, index):
         if index < len(self.sites):
             self.sites[index-1].fail()
+            # Post failure steps
         return
 
     def recover(self, index):
         if index < len(self.sites):
             self.sites[index-1].recover()
+            # Post recovery steps
         return
 
 
@@ -301,6 +329,11 @@ class TransactionManager:
                 return
             self.recover(eachOperation[int(site)])
             print("Site "+str(site)+" Recovered")
+
+        elif eachOperation == "dump()":
+            self.dump()
+
+        return
 
 
 ######################################################################
