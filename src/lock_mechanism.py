@@ -78,13 +78,14 @@ class LockMechanism:
                 temp = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==0]
                 if(len(temp)>0):
                     locks.append(temp)
-            return locks
+            if len(locks) > 0:
+                return locks
         else:
             site_number = 1 + variable%10
             locks = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==0]
             if(len(locks)>0):
                 return locks
-        return []
+        return None
     
     def is_write_locked(self, variable, sites):
         present_all_sites = False
