@@ -82,18 +82,18 @@ class TransactionManager:
         # Response again will be a lock obj or None
         # In this case if response is None, go ahead and get a read lock using currLock.get_read_lock()
         # Else use the lock obj to determine who has the lock then block transaction and add depende.
-        hasLock = currLock.has_lock(transactionNum, variable_Name, self.sites)
+        currTxnHasLock = currLock.has_lock(transactionNum, variable_Name, self.sites)
         o = Operation(opType, self.time, transactionNum)
         t = Transaction(transactionNum, self.time)
         # self.operationHistory.append(o)
 
-        if hasLock == None:
-            prevLockTransaction = currLock.is_write_locked(variable_Name, self.sites)
-            if prevLockTransaction != None:
+        if currTxnHasLock == None:
+            lockedByOtherTransactions = currLock.is_write_locked(variable_Name, self.sites)
+            if lockedByOtherTransactions != None:
                 #Set lock for transaction txn to R
                 self.blockedTransactions[transactionNum] = t
                 self.blockedOperations.append(o)
-                self.add_dependency(transactionNum, prevLockTransaction.transaction)
+                self.add_dependency(transactionNum, lockedByOtherTransactions.transaction)
             else:
                 read_lock = currLock.get_lock(0,transactionNum, variable_Name, self.sites)
                 if read_lock != None:
@@ -123,12 +123,40 @@ class TransactionManager:
     ######################################################################
     def writeValue(self, opType, transaction_num, variable_name, x_value):
         o = Operation(opType, self.time, transaction_num)
-        self.operationHistory.append(o)
+
+        ## Instead of creating a new transaction obj, just fetch the already created one from active transactions dictionary
+        t = self.activeTransactions.get(transaction_num)
+
+        ## Append to op history only if write succeeds?
         
         #Check for locks
         currLock = LockMechanism()
-        var_lock = currLock.has_lock(transaction_num, variable_name, self.sites)
-        
+        currTxnHasLock = currLock.has_lock(transaction_num, variable_name, self.sites)
+        if currTxnHasLock == None:
+            writeLockedByOtherTransactions = currLock.is_write_locked(variable_name, self.sites)
+            readLockedByOtherTransactions = currLock.is_read_locked(variable_name, self.sites)
+            if (readLockedByOtherTransactions != None) or (writeLockedByOtherTransactions != None):
+                self.blockedTransactions[transaction_num] = t
+                self.blockedOperations.append(o)
+                ## ----AWAITING CHANGE IN LOCK_MECHANISM---- - For read locks, will have to make a list of all transactions that hold the read lock and add dependency graphs for the same
+                ## For write lock, there will be only one transaction so only one edge to be added
+                if writeLockedByOtherTransactions != None:
+                    self.add_dependency(transaction_num, writeLockedByOtherTransactions.transaction)
+            else:
+                newLock = currLock.get_lock(1, transaction_num, variable_name, x_value)
+                ## Need to add a check here if acquiring the lock was successful, for site down scenario
+                if newLock.lockType == 1:
+                    self.operationHistory.append(o)
+
+                ## If successful, add the operation to op history and the to_commit array in transaction object
+        elif currTxnHasLock.lockType == 0:
+                currLock.promote_lock(transaction_num, variable_name, self.sites)
+                ## If successful, add the operation to op history and the to_commit array in transaction object
+        else:
+            currLock.get_lock(1, transaction_num, variable_name, self.sites)
+            ## Need to add a check here if acquiring the lock was successful, for site down scenario
+            ## If successful, add the operation to op history and the to_commit array in transaction object
+        return
     
     def writeOp(self, opType, transaction_num, variable_name, x_value ):
         #Check for locks, check if site is available, else write on other sites
