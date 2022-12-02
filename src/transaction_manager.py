@@ -59,14 +59,14 @@ class TransactionManager:
     ######################################################################
     def beginTransaction(self, transactionNumber, opType):
         o = Operation(opType, self.time, transactionNumber)
-        t = Transaction(transactionNumber, beginTime=self.time, isReadOnly=False)
+        t = Transaction(transactionNumber, False, beginTime=self.time)
         self.operationHistory.append(o)
         self.activeTransactions[transactionNumber] = t
         # print(t.isReadOnly)
     
     def beginROTransaction(self, transactionNumber, opType):
         o = Operation(opType, self.time, transactionNumber)
-        t = Transaction(transactionNumber, beginTime=self.time, isReadOnly=True)
+        t = Transaction(transactionNumber, True, beginTime=self.time)
         self.operationHistory.append(o)
         self.activeTransactions[transactionNumber] = t
         # print(t.isReadOnly)
@@ -75,41 +75,45 @@ class TransactionManager:
     ## transaction start methods: Read Operation Methods
     ######################################################################
     def readValue(self, opType, transactionNum, variable_Name):
-        currLock = LockMechanism()
-        # Check if transactionNum has write or read lock using currLock.has_lock(). 
-        # Response will be a lock object or None
-        # If None check if any other transaction has a "Write" lock using currLock.is_write_locked()
-        # Response again will be a lock obj or None
-        # In this case if response is None, go ahead and get a read lock using currLock.get_read_lock()
-        # Else use the lock obj to determine who has the lock then block transaction and add depende.
-        currTxnHasLock = currLock.has_lock(transactionNum, variable_Name, self.sites)
         o = Operation(opType, self.time, transactionNum)
         t = self.activeTransactions.get(transactionNum)
-        # self.operationHistory.append(o)
+        
+        if t.isReadOnly == False:
+            currLock = LockMechanism()
+            # Check if transactionNum has write or read lock using currLock.has_lock(). 
+            # Response will be a lock object or None
+            # If None check if any other transaction has a "Write" lock using currLock.is_write_locked()
+            # Response again will be a lock obj or None
+            # In this case if response is None, go ahead and get a read lock using currLock.get_read_lock()
+            # Else use the lock obj to determine who has the lock then block transaction and add depende.
+            currTxnHasLock = currLock.has_lock(transactionNum, variable_Name, self.sites)
+            # self.operationHistory.append(o)
 
-        if currTxnHasLock == None:
-            lockedByOtherTransactions = currLock.is_write_locked(variable_Name, self.sites)
-            if lockedByOtherTransactions != None:
-                #Set lock for transaction txn to R
-                self.blockedTransactions[transactionNum] = t
-                self.blockedOperations.append(o)
-                self.add_dependency(transactionNum, lockedByOtherTransactions.transaction)
-            else:
-                read_lock = currLock.get_lock(0,transactionNum, variable_Name, self.sites)
-                if read_lock != None:
-                    print("")
-                    # READ
-                else:
-                    # Block or Abort?
-                    print("Blocked")
+            if currTxnHasLock == None:
+                lockedByOtherTransactions = currLock.is_write_locked(variable_Name, self.sites)
+                if lockedByOtherTransactions != None:
+                    #Set lock for transaction txn to R
                     self.blockedTransactions[transactionNum] = t
                     self.blockedOperations.append(o)
-                    #block
+                    self.add_dependency(transactionNum, lockedByOtherTransactions.transaction)
+                else:
+                    read_lock = currLock.get_lock(0,transactionNum, variable_Name, self.sites)
+                    if read_lock != None:
+                        print("")
+                        # READ
+                    else:
+                        # Block or Abort?
+                        print("Blocked")
+                        self.blockedTransactions[transactionNum] = t
+                        self.blockedOperations.append(o)
+                        #block
+            else:
+                print("")
+                # have a lock so read
+                # READ
+            return
         else:
-            print("")
-            # have a lock so read
-            # READ
-        return
+            print("Read Only--------------")
 
 
     def readOp(self, opType, transactionNum, variableName):
