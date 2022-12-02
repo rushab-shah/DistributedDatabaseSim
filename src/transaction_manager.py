@@ -318,7 +318,7 @@ class TransactionManager:
     ######################################################################
     def opProcess(self,eachOperation):
         self.time = self.time + 1
-
+        eachOperation = eachOperation.replace(" ", "")
         ##### Begin() Transaction ######
         if eachOperation.startswith("begin("):
             transactionNum = (eachOperation.split("("))[1][:-2]
