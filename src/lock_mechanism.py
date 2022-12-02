@@ -70,7 +70,7 @@ class LockMechanism:
     
     def is_read_locked(self, variable, sites):
         present_all_sites = False
-        if variable%2 ==0:
+        if int(variable)%2 ==0:
             present_all_sites = True
         if present_all_sites:
             locks = []
@@ -78,17 +78,18 @@ class LockMechanism:
                 temp = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==0]
                 if(len(temp)>0):
                     locks.append(temp)
-            return locks
+            if len(locks) > 0:
+                return locks
         else:
-            site_number = 1 + variable%10
+            site_number = 1 + int(variable)%10
             locks = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==0]
             if(len(locks)>0):
                 return locks
-        return []
+        return None
     
     def is_write_locked(self, variable, sites):
         present_all_sites = False
-        if variable%2 ==0:
+        if int(variable)%2 ==0:
             present_all_sites = True
         if present_all_sites:
             lock = []
@@ -97,7 +98,7 @@ class LockMechanism:
                 if(len(lock)>0):
                     return lock[0]
         else:
-            site_number = 1 + variable%10
+            site_number = 1 + int(variable)%10
             lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==1]
             if(len(lock)>0):
                 return lock[0]
