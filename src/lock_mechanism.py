@@ -43,7 +43,7 @@ class LockMechanism:
             return lock
         else:
             site_num = (1+ int(variable)%10)
-            if(sites[site_num-1].isSiteDown() != True):
+            if(sites[site_num-1].isSiteDown() != True): 
                 lock = Lock(lock_type,variable,site_num,transaction_number)
                 sites[site_num-1].lock_table.append(lock)
                 print("Obtaining "+str(lock_type)+" lock for "+str(transaction_number)+" for variable x"+str(variable) +" at site "+str(site_num))
