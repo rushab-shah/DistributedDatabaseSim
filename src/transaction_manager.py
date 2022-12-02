@@ -244,12 +244,14 @@ class TransactionManager:
         # Abort the youngest transaction
         min_age = 99999999
         transaction_to_abort = -1
-        for tnum in self.activeTransactions.keys():
+        transactions_to_check = self.activeTransactions | self.blockedTransactions
+        for tnum in transactions_to_check.keys():
             if self.get_transaction_age(tnum) < min_age:
                 min_age = self.get_transaction_age(tnum)
                 transaction_to_abort = tnum
-        print("Aborted Transaction "+str(transaction_to_abort)+" for handling deadlock")
-        self.abort(transaction_to_abort)
+        if transaction_to_abort!=-1:
+            print("Aborted Transaction "+str(transaction_to_abort)+" for handling deadlock")
+            self.abort(transaction_to_abort)
         return
 
     ######################################################################
@@ -282,9 +284,14 @@ class TransactionManager:
         return
     
     def abort(self, transaction_number):
-        t = self.activeTransactions.pop(transaction_number)
-        t.endTime = self.time
-        self.expiredTransactions[transaction_number] = t
+        if self.activeTransactions.get(transaction_number)!= None:
+            t = self.activeTransactions.pop(transaction_number)
+            t.endTime = self.time
+            self.expiredTransactions[transaction_number] = t
+        elif self.blockedTransactions.get(transaction_number)!= None:
+            t = self.blockedTransactions.pop(transaction_number)
+            t.endTime = self.time
+            self.expiredTransactions[transaction_number] = t
         return
 
     def commit(self, transaction):
@@ -326,8 +333,14 @@ class TransactionManager:
     ######################################################################
     def get_transaction_age(self,transaction_number):
         # fetch the transaction from list of active transactions
-        transaction_start_time = self.activeTransactions[transaction_number].beginTime
-        age = self.time - transaction_start_time
+        if self.activeTransactions.get(transaction_number)!= None:
+            transaction_start_time = self.activeTransactions[transaction_number].beginTime
+            age = self.time - transaction_start_time
+            return age
+        elif self.blockedTransactions.get(transaction_number)!= None:
+            transaction_start_time = self.blockedTransactions[transaction_number].beginTime
+            age = self.time - transaction_start_time
+            return age
         return age
     
     def extract_id_from_operation(self, operation):
@@ -410,7 +423,7 @@ class TransactionManager:
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
             ### Get transaction id
-            self.end_transaction((eachOperation.split("("))[1][:-2])
+            self.end_transaction((eachOperation.split("("))[1][1:-2])
         
         elif eachOperation.startswith("recover("):
             #eg. recover(2) => recover site 2.
