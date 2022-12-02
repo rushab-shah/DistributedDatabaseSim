@@ -36,6 +36,7 @@ class TransactionManager:
         for i in range(0,10):
             # Because sites are numbered 1 onwards while array is 0 indexed
             site = DataManager(i+1)
+            site.is_down = False
             self.sites.append(site)
             self.initialize_site_variables(i+1)
         print("Sites Initialized")
@@ -126,7 +127,7 @@ class TransactionManager:
     ## transaction start methods: Write Operation Methods
     ######################################################################
     def writeValue(self, opType, transaction_num, variable_name, x_value):
-        o = Operation(opType, self.time, transaction_num)
+        o = Operation(opType, self.time, transaction_num,variable_name,x_value)
         t = self.activeTransactions.get(transaction_num)
 
         currLock = LockMechanism()
@@ -145,7 +146,7 @@ class TransactionManager:
                 if writeLockedByOtherTransactions != None:
                     self.add_dependency(transaction_num, writeLockedByOtherTransactions.transaction)
             else:
-                newLock = currLock.get_lock(1, transaction_num, variable_name, x_value)
+                newLock = currLock.get_lock(1, transaction_num, variable_name, self.sites)
                 ## If getting the lock is not successful, None will be returned so change the if condition accordingly
                 if newLock != None:
                     self.operationHistory.append(o)
@@ -222,6 +223,7 @@ class TransactionManager:
     ######################################################################
     def end_transaction(self,transaction_number):
         if(self.can_commit(transaction_number)):
+            print("Transaction "+str(transaction_number)+" can commit")
             t = self.activeTransactions.pop(transaction_number)
             self.commit(t)
             self.expiredTransactions[transaction_number] = t
@@ -244,14 +246,14 @@ class TransactionManager:
         for write_op in transaction.to_commit:
             variable = write_op.variable
             variable_val  = write_op.variableValue
-            if variable % 2 ==0:
+            if int(variable) % 2 ==0:
                 for site in self.sites:
                     target_var = [v for v in site.var_store if v.id == variable]
                     if(len(target_var)==1):
                         index = site.var_store.index(target_var[0])
                         site.var_store[index].value = variable_val
             else:
-                site_num = 1 + variable%10
+                site_num = 1 + int(variable)%10
                 target_var = [v for v in self.sites[site_num-1].var_store if v.id == variable]
                 if(len(target_var)==1):
                     index = self.sites[site_num-1].var_store.index(target_var[0])
@@ -339,13 +341,13 @@ class TransactionManager:
             print("Site" +str(site) +" fail")
 
         elif eachOperation.startswith("R("):
-            #Read operation. eg. R(T1,x1). Execute write() function
+            #Read operation. eg. R(T1,x1). Execute read() function
             split_readOp = eachOperation.split(",")
             opType = eachOperation[0]
             txn = split_readOp[0][2:]
             var_x = split_readOp[1][1:-1]
             self.readOp(opType, txn, var_x)
-            print("Transaction reads x_n")
+            print("Transaction "+str(txn)+" reads x"+str(var_x))
 
         elif eachOperation.startswith("W("):
             #Write operation. eg. W(T2,x8,88) . Execute write() function
@@ -353,9 +355,9 @@ class TransactionManager:
             opType = eachOperation[0]
             txn = split_writeOp[0][2:]
             var_x = split_writeOp[1][1:]
-            write_val = split_writeOp[2][:-1]
+            write_val = split_writeOp[2][:-2]
             self.writeOp(opType, txn, var_x, write_val)
-            print("Transaction writes value to variable x_n")
+            print("Transaction "+txn+" writes value "+str(write_val)+" to variable x"+str(var_x))
         
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
