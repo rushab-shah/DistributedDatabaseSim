@@ -371,14 +371,14 @@ class TransactionManager:
 
         ##### Begin() Transaction ######
         if eachOperation.startswith("begin("):
-            transactionNum = (eachOperation.split("("))[1][:-2]
+            transactionNum = (eachOperation.split("("))[1][1:-2]
             opType = eachOperation[:5]
             print("Starting Transaction "+str(transactionNum))
             self.beginTransaction(transactionNum, opType)
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
-            transactionNum = (eachOperation.split("("))[1][:-2]
+            transactionNum = (eachOperation.split("("))[1][1:-2]
             opType = eachOperation[:7]
             print("Starting Read-Only Transaction "+str(transactionNum))
             self.beginROTransaction(transactionNum, opType)
@@ -394,20 +394,18 @@ class TransactionManager:
             #Read operation. eg. R(T1,x1). Execute read() function
             split_readOp = eachOperation.split(",")
             opType = eachOperation[0]
-            txn = split_readOp[0][2:]
+            txn = split_readOp[0][3:]
             var_x = split_readOp[1][1:-1]
             self.readOp(opType, txn, var_x)
-            #print("Transaction "+str(txn)+" reads x"+str(var_x))
 
         elif eachOperation.startswith("W("):
             #Write operation. eg. W(T2,x8,88) . Execute write() function
             split_writeOp = eachOperation.split(",")
             opType = eachOperation[0]
-            txn = split_writeOp[0][2:]
+            txn = split_writeOp[0][3:]
             var_x = split_writeOp[1][1:]
             write_val = split_writeOp[2][:-2]
             self.writeOp(opType, txn, var_x, write_val)
-            # print("Transaction "+txn+" writes value "+str(write_val)+" to variable x"+str(var_x))
         
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
