@@ -39,9 +39,10 @@ def parse_from_file(file_path):
         for line in input_file:
             if(check_for_unnecessary_lines(line)):
                 tm_obj.opProcess(line)
+        # print("##### Checking if ops pending")
         while(tm_obj.operations_left()):
             ## Wait till all operations done
-            if(debug):
+            if debug:
                 print("Handling remaining ops")
             tm_obj.finish_remaining_operations()
         

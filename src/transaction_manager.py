@@ -7,6 +7,7 @@ from lock import Lock
 from lock_mechanism import LockMechanism
 import networkx as nx
 from incident import Incident
+from commit import Commit
 
 class TransactionManager:
     isReadOnly = False
@@ -34,6 +35,8 @@ class TransactionManager:
     def finish_remaining_operations(self):
         if len(self.blockedOperations) > 0:
             for transaction_num in self.blockedTransactions:
+                if self.debug:
+                    print("Resuming transaction T"+str(transaction_num))
                 self.activeTransactions[transaction_num] = self.blockedTransactions[transaction_num]
             self.blockedTransactions = {}
 
@@ -41,8 +44,8 @@ class TransactionManager:
             self.blockedOperations = []
 
             for op in pending_ops:
-                if self.debug:
-                    print("OPTYPE "+str(op.opType))
+                # if self.debug:
+                #     print("OPTYPE "+str(op.opType))
                 if op.opType=="R":
                     self.readValue(op.opType,op.transactionNumber,op.variable)
                 elif op.opType=="W":
@@ -87,6 +90,9 @@ class TransactionManager:
             elif site_number == (1 + id % 10):
                 var_obj = Variable(id*10,id,self.time)
                 var_store.append(var_obj)
+            # if self.debug:
+            # print("Adding commit for x"+str(id)+" at site "+str(site_number)+" at "+str(self.time))
+            self.sites[site_number-1].commit_history.append(Commit(-1,id,id*10,self.time))
         self.sites[site_number-1].set_var_array(var_store)
         self.sites[site_number-1].is_down = False
         return
@@ -157,9 +163,75 @@ class TransactionManager:
                 return
         else:
             if self.debug:
-                print("Read Only--------------")
+                print("Transaction T"+str(transactionNum)+" is read only")
+            start_time = t.beginTime
+            if self.read_correct_version(variable_Name,start_time, transactionNum):
+                if self.debug:
+                    print("RO successful")
+            else:
+                if self.debug:
+                    print("RO op Failed")
             return
 
+    def read_correct_version(self, variable, start_time, transactionNum):
+        site_num = self.get_site_for_ro(variable,start_time)
+        if site_num != None:
+            commits = [x for x in self.sites[site_num-1].commit_history if int(x.time) < int(start_time) and int(x.variable_name)==int(variable)]
+            if len(commits) > 0:
+                sorted_commits = sorted(commits, key=lambda x: x.time)
+                read_val = sorted_commits[len(sorted_commits)-1].variable_value
+                print("x"+str(variable)+": "+str(read_val))
+                return True
+            else:
+
+                if self.debug:
+                    print("commit list empty")
+        else:
+            if self.debug:
+                print("Aborting read only transaction T"+str(transactionNum))
+            self.abort(transactionNum)
+        return False
+
+    # def find_commit_index(self,start_time, site_num,variable):
+    #     if self.debug:
+    #         print("Start time "+str(start_time)+"\nSite Num "+str(site_num)+" variable x"+str(variable))
+    #     for commit in self.sites[site_num-1].commit_history:
+    #         if int(commit.variable_name) == int(variable):
+    #             print("Committed x"+str(commit.variable_name)+" at "+str(commit.time))
+
+    #     return -1
+
+
+    def get_site_for_ro(self, variable, start_time):
+        if int(variable)%2==0:
+            commit_time = -1
+
+            # First checking latest commit time
+            for site in self.sites:
+                commits = [commit for commit in site.commit_history if commit.time < start_time 
+                and commit.variable_name == variable]
+                # if self.debug:
+                #     print("Checking for sites for RO before start time "+str(start_time))
+                if len(commits)>0:
+                    sorted_commits = sorted(commits, key=lambda x: x.time)
+                    if commit_time < sorted_commits[len(sorted_commits)-1].time:
+                        commit_time = sorted_commits[len(sorted_commits)-1].time
+
+            # Now checking for site failures between commit_time and start_time
+            candidate_site = -1
+            for site in self.sites:
+                failures = [x for x in self.site_incidents if x.site_number == site.site_number and x.time < start_time and x.time > commit_time]
+                if len(failures) == 0:
+                    return site.site_number
+            if candidate_site == -1:
+                return None
+        else:
+            site_num = 1 + int(variable)%10
+            if self.sites[site_num-1].isSiteDown():
+                return None
+            else:
+                return site_num
+        return None
 
     def readOp(self, opType, transactionNum, variableName):
         if transactionNum in self.activeTransactions.keys():
@@ -317,11 +389,14 @@ class TransactionManager:
                 self.abort(transaction_number)
                 self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
                 print("Transaction "+str(transaction_number)+" aborted")
+            # Resume blocked ops
+            if self.debug:
+                print("Resuming any blocked ops")
+            self.finish_remaining_operations()
         else:
             # Can't end transaction since its blocked
             op = Operation("end",self.time,transaction_number)
             self.blockedOperations.append(op)
-
         return
     
     def abort(self, transaction_number):
@@ -364,6 +439,7 @@ class TransactionManager:
                         index = site.var_store.index(target_var[0])
                         site.var_store[index].value = variable_val
                         site.var_store[index].last_commit_time = self.time
+                        site.commit_history.append(Commit(int(transaction),int(variable),int(variable_val),self.time))
                         self.set_read_availability(site.site_number,variable)
             else:
                 site_num = 1 + int(variable)%10
@@ -372,6 +448,7 @@ class TransactionManager:
                     index = self.sites[site_num-1].var_store.index(target_var[0])
                     self.sites[site_num-1].var_store[index].value = variable_val
                     self.sites[site_num-1].var_store[index].last_commit_time = self.time
+                    self.sites[site_num-1].commit_history.append(Commit(int(transaction),int(variable),int(variable_val),self.time))
         print("Transaction "+str(transaction.transactionNumber)+" commited")
         return
     
@@ -455,6 +532,9 @@ class TransactionManager:
             incident_object = Incident(site_number,"recover",self.time)
             self.site_incidents.append(incident_object)
             self.reset_read_availability(site_number)
+            if self.debug:
+                print("Resuming any blocked ops")
+            self.finish_remaining_operations()
             # Post recovery steps
         return
 
