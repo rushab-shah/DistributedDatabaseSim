@@ -76,9 +76,9 @@ class TransactionManager:
     ## transaction start methods: Read Operation Methods
     ######################################################################
     def readValue(self, opType, transactionNum, variable_Name):
-        o = Operation(opType, self.time, transactionNum)
+        o = Operation(opType, self.time, transactionNum, variable_Name)
         t = self.activeTransactions.get(transactionNum)
-        
+
         if t.isReadOnly == False:
             currLock = LockMechanism()
             # Check if transactionNum has write or read lock using currLock.has_lock(). 
@@ -97,6 +97,7 @@ class TransactionManager:
                     self.blockedTransactions[transactionNum] = t
                     self.blockedOperations.append(o)
                     self.add_dependency(transactionNum, lockedByOtherTransactions.transaction)
+                    self.activeTransactions.pop(transactionNum)
                 else:
                     read_lock = currLock.get_lock(0,transactionNum, variable_Name, self.sites)
                     if read_lock != None:
@@ -107,6 +108,7 @@ class TransactionManager:
                         print("Blocked")
                         self.blockedTransactions[transactionNum] = t
                         self.blockedOperations.append(o)
+                        self.activeTransactions.pop(transactionNum)
                         #block
             else:
                 print("")
@@ -127,7 +129,7 @@ class TransactionManager:
     ## transaction start methods: Write Operation Methods
     ######################################################################
     def writeValue(self, opType, transaction_num, variable_name, x_value):
-        o = Operation(opType, self.time, transaction_num,variable_name,x_value)
+        o = Operation(opType, self.time, transaction_num, variable_name, x_value)
         t = self.activeTransactions.get(transaction_num)
 
         currLock = LockMechanism()
@@ -140,6 +142,7 @@ class TransactionManager:
             if (readLockedByOtherTransactions != None) or (writeLockedByOtherTransactions != None):
                 self.blockedTransactions[transaction_num] = t
                 self.blockedOperations.append(o)
+                self.activeTransactions.pop(transaction_num)
                 if readLockedByOtherTransactions != None:
                     for locks in readLockedByOtherTransactions:
                         self.add_dependency(transaction_num, locks.transaction)
@@ -154,10 +157,15 @@ class TransactionManager:
                 else:
                     self.blockedTransactions[transaction_num] = t
                     self.blockedOperations.append(o)
+                    self.activeTransactions.pop(transaction_num)
                 ## else: block transaction & operation
                 
         elif currTxnHasLock.lockType == 0:
             if readLockedByOtherTransactions != None:
+                self.blockedTransactions[transaction_num] = t
+                self.blockedOperations.append(o)
+                self.activeTransactions.pop(transaction_num)
+
                 for locks in readLockedByOtherTransactions:
                     self.add_dependency(transaction_num, locks.transaction)
                     ## Also block transac and operation
@@ -175,6 +183,7 @@ class TransactionManager:
             else:
                 self.blockedTransactions[transaction_num] = t
                 self.blockedOperations.append(o)
+                self.activeTransactions.pop(transaction_num)
         return
     
     def writeOp(self, opType, transaction_num, variable_name, x_value ):
