@@ -2,17 +2,35 @@
 # Driver code
 # This code is responsible to parse input and send parsed data to TM
 
-import sys
+import sys, getopt
 from transaction_manager import TransactionManager
 
-# Two Scenarios: File Input/ command line input
+options = "d"
+debug = False
 tm_obj = TransactionManager()
-
+# Two Scenarios: File Input/ command line input
 def main():
+    debug = False
+    try:
+        args, vals = getopt.getopt(sys.argv[1:],options)
+        for arg, val in args:
+            if arg in '-d':
+                print("Debugger on")
+                debug = True
+                tm_obj.toggle_debugger(debug)
+
+    except getopt.error:
+        print(getopt.error)
+    
     if(len(sys.argv)<2):
         parse_from_cmd()
+    elif(len(sys.argv)==2 and debug):
+        parse_from_cmd()
     else:
-        parse_from_file(sys.argv[1])
+        if(debug):
+            parse_from_file(sys.argv[2])
+        else:
+            parse_from_file(sys.argv[1])
 
 def parse_from_file(file_path):
     try:
@@ -21,9 +39,11 @@ def parse_from_file(file_path):
         for line in input_file:
             if(check_for_unnecessary_lines(line)):
                 tm_obj.opProcess(line)
-        # while(tm_obj.operations_left()):
-        #     ## Wait till all operations done
-        #     .
+        while(tm_obj.operations_left()):
+            ## Wait till all operations done
+            if(debug):
+                print("Handling remaining ops")
+            tm_obj.finish_remaining_operations()
         
         print("\nCompleted Processing")
         input_file.close()
@@ -31,7 +51,6 @@ def parse_from_file(file_path):
         print("Invalid File Path")
 
 def parse_from_cmd():
-    print("cmd")
     input_op = input()
     while(input_op!="exit"):
         if(check_for_unnecessary_lines(input_op)):
@@ -39,6 +58,10 @@ def parse_from_cmd():
         else:
             print("Enter valid operation\n")
         input_op = input()
+    if input_op=="exit":
+        if debug:
+            print("Finishing pending ops")
+        tm_obj.finish_remaining_operations()
 
 
 def check_for_unnecessary_lines(line):

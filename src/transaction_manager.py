@@ -20,6 +20,7 @@ class TransactionManager:
     dependency_graph_edges = []
     dependency_graph = nx.DiGraph()
     check_deadlock = False
+    debug = False
     
     time = 0
 
@@ -29,24 +30,71 @@ class TransactionManager:
         else:
             return False
 
+    def finish_remaining_operations(self):
+        if len(self.blockedOperations) > 0:
+            for transaction_num in self.blockedTransactions:
+                self.activeTransactions[transaction_num] = self.blockedTransactions[transaction_num]
+            self.blockedTransactions = {}
+
+            pending_ops = self.blockedOperations
+            self.blockedOperations = []
+
+            for op in pending_ops:
+                # if self.debug:
+                #     print("OPTYPE "+str(op.opType))
+                if op.opType=="R":
+                    self.readValue(op.opType,op.transactionNumber,op.variable)
+                elif op.opType=="W":
+                    self.writeValue(op.opType,op.transactionNumber,op.variable,op.variableValue)
+                elif op.opType=="end":
+                    self.end_transaction(op.transactionNumber)
+
+            pending_ops = []
+            # op = self.blockedOperations.pop(0)
+            # if self.debug:
+            #     print("OPTYPE "+str(op.opType))
+            # if self.blockedTransactions.get(op.transactionNumber) != None:
+            #     if self.debug:
+            #         print("Unblocked transaction "+str(op.transactionNumber))
+            #     t = self.blockedTransactions.pop(op.transactionNumber)
+            #     self.activeTransactions[op.transactionNumber] = t
+            
+            # if op.opType=="R":
+            #     self.readValue(op.opType,op.transactionNumber,op.variable)
+            # elif op.opType=="W":
+            #     self.writeValue(op.opType,op.transactionNumber,op.variable,op.variableValue)
+            # elif op.opType=="end":
+            #     self.end_transaction(op.transactionNumber)
+            # # Check for inf loop
+            # self.finish_remaining_operations()
+
+        else:
+            return
+
     ######################################################################
     ## Initialization methods: __init__ , initialize_sites, initialize_site_variables
     ######################################################################
     def __init__(self) -> None:
-        print("Initializing Transaction Manager")
         self.time = 0
         self.initialize_sites()
-        print("Transaction Manager Initialized\n\n")
+        self.lock_system = LockMechanism()
+
+    def toggle_debugger(self,debug):
+        self.debug = debug
+        self.lock_system.debug = debug
+        return
 
     def initialize_sites(self):
-        print("Initializing Sites")
+        if self.debug:
+            print("Initializing Sites")
         for i in range(0,10):
             # Because sites are numbered 1 onwards while array is 0 indexed
             site = DataManager(i+1)
             site.is_down = False
             self.sites.append(site)
             self.initialize_site_variables(i+1)
-        print("Sites Initialized")
+        if self.debug:    
+            print("Sites Initialized")
         return
 
     def initialize_site_variables(self,site_number):
@@ -87,18 +135,17 @@ class TransactionManager:
         t = self.activeTransactions.get(transactionNum)
 
         if t.isReadOnly == False:
-            currLock = LockMechanism()
             # Check if transactionNum has write or read lock using currLock.has_lock(). 
             # Response will be a lock object or None
             # If None check if any other transaction has a "Write" lock using currLock.is_write_locked()
             # Response again will be a lock obj or None
             # In this case if response is None, go ahead and get a read lock using currLock.get_read_lock()
             # Else use the lock obj to determine who has the lock then block transaction and add depende.
-            currTxnHasLock = currLock.has_lock(transactionNum, variable_Name, self.sites)
+            currTxnHasLock = self.lock_system.has_lock(transactionNum, variable_Name, self.sites)
             # self.operationHistory.append(o)
 
             if currTxnHasLock == None:
-                lockedByOtherTransactions = currLock.is_write_locked(variable_Name, self.sites)
+                lockedByOtherTransactions = self.lock_system.is_write_locked(variable_Name, self.sites)
                 if lockedByOtherTransactions != None:
                     #Set lock for transaction txn to R
                     self.blockedTransactions[transactionNum] = t
@@ -106,24 +153,27 @@ class TransactionManager:
                     self.add_dependency(transactionNum, lockedByOtherTransactions.transaction)
                     self.activeTransactions.pop(transactionNum)
                 else:
-                    read_lock = currLock.get_lock(0,transactionNum, variable_Name, self.sites)
+                    read_lock = self.lock_system.get_lock(0,transactionNum, variable_Name, self.sites)
                     if read_lock != None:
                         print("")
                         # READ
                     else:
                         # Block or Abort?
-                        print("Blocked")
+                        if self.debug:
+                            print("Blocked")
                         self.blockedTransactions[transactionNum] = t
                         self.blockedOperations.append(o)
                         self.activeTransactions.pop(transactionNum)
                         #block
             else:
-                print("")
+                if self.debug:
+                    print("")
                 # have a lock so read
                 # READ
             return
         else:
-            print("Read Only--------------")
+            if self.debug:
+                print("Read Only--------------")
 
 
     def readOp(self, opType, transactionNum, variableName):
@@ -139,30 +189,30 @@ class TransactionManager:
         o = Operation(opType, self.time, transaction_num, variable_name, x_value)
         t = self.activeTransactions.get(transaction_num)
 
-        currLock = LockMechanism()
-        currTxnHasLock = currLock.has_lock(transaction_num, variable_name, self.sites) 
+        currTxnHasLock = self.lock_system.has_lock(transaction_num, variable_name, self.sites) 
 
-        writeLockedByOtherTransactions = currLock.is_write_locked(variable_name, self.sites)
-        readLockedByOtherTransactions = currLock.is_read_locked(variable_name, self.sites)
+        writeLockedByOtherTransactions = self.lock_system.is_write_locked(variable_name, self.sites)
+        readLockedByOtherTransactions = self.lock_system.is_read_locked(variable_name, self.sites)
 
         if currTxnHasLock == None:
             if (readLockedByOtherTransactions != None) or (writeLockedByOtherTransactions != None):
                 self.blockedTransactions[transaction_num] = t
                 self.blockedOperations.append(o)
                 self.activeTransactions.pop(transaction_num)
-                print("Transaction "+str(transaction_num)+" is blocked")
+                print("Transaction "+str(transaction_num)+" is blocked because lock is held by someone else")
                 if readLockedByOtherTransactions != None:
                     for locks in readLockedByOtherTransactions:
                         self.add_dependency(transaction_num, locks.transaction)
                 if writeLockedByOtherTransactions != None:
                     self.add_dependency(transaction_num, writeLockedByOtherTransactions.transaction)
             else:
-                newLock = currLock.get_lock(1, transaction_num, variable_name, self.sites)
+                newLock = self.lock_system.get_lock(1, transaction_num, variable_name, self.sites)
                 ## If getting the lock is not successful, None will be returned so change the if condition accordingly
                 if newLock != None:
                     self.operationHistory.append(o)
                     t.add_to_commit(o)
-                    print("Transaction "+transaction_num+" writes value "+str(x_value)+" to variable x"+str(variable_name))
+                    if self.debug:
+                        print("Transaction "+transaction_num+" writes value "+str(x_value)+" to variable x"+str(variable_name))
                 else:
                     self.blockedTransactions[transaction_num] = t
                     self.blockedOperations.append(o)
@@ -181,23 +231,26 @@ class TransactionManager:
                     print("Transaction "+str(transaction_num)+" is blocked")
                     ## Also block transac and operation
             elif readLockedByOtherTransactions == None:
-                currLock.promote_lock(transaction_num, variable_name, self.sites, )
+                self.lock_system.promote_lock(transaction_num, variable_name, self.sites, currTxnHasLock.site)
                 self.operationHistory.append(o)
                 t.add_to_commit(o)
-                print("Transaction "+transaction_num+" writes value "+str(x_value)+" to variable x"+str(variable_name))
+                if self.debug:
+                    print("Transaction "+transaction_num+" writes value "+str(x_value)+" to variable x"+str(variable_name))
                 
         else:
-            newLock = currLock.get_lock(1, transaction_num, variable_name, self.sites)
+            newLock = self.lock_system.get_lock(1, transaction_num, variable_name, self.sites)
             ## If getting the lock is not successful, None will be returned so change the if condition accordingly
             if newLock != None:
                 self.operationHistory.append(o)
                 t.add_to_commit(o)
-                print("Transaction "+transaction_num+" writes value "+str(x_value)+" to variable x"+str(variable_name))
+                if self.debug:
+                    print("Transaction "+transaction_num+" writes value "+str(x_value)+" to variable x"+str(variable_name))
             else:
                 self.blockedTransactions[transaction_num] = t
                 self.blockedOperations.append(o)
                 self.activeTransactions.pop(transaction_num)
-                print("Transaction "+str(transaction_num)+" is blocked because no sites available")
+                if self.debug:
+                    print("Transaction "+str(transaction_num)+" is blocked because no sites available")
         return
     
     def writeOp(self, opType, transaction_num, variable_name, x_value ):
@@ -226,7 +279,8 @@ class TransactionManager:
         return
 
     def clear_dependencies(self,expiring_transaction):
-        print("Clearing dependencies for transaction "+str(expiring_transaction))
+        if self.debug:
+            print("Clearing dependencies for transaction "+str(expiring_transaction))
         edges = [ e for e in self.dependency_graph_edges if e[1]==expiring_transaction]
         for edge in edges:
             self.dependency_graph_edges.remove(edge)
@@ -260,22 +314,21 @@ class TransactionManager:
     def end_transaction(self,transaction_number):
         if self.blockedTransactions.get(transaction_number) == None:
             if(self.can_commit(transaction_number)):
-                print("Transaction "+str(transaction_number)+" can commit")
+                if self.debug:
+                    print("Transaction "+str(transaction_number)+" can commit")
                 t = self.activeTransactions.pop(transaction_number)
                 t.endTime = self.time
                 self.commit(t)
+                ## Release all locks for transaction_number
+                self.lock_system.release_all_locks(transaction_number,self.sites)
+
+                # Release all dependencies
+                self.clear_dependencies(transaction_number)
                 self.expiredTransactions[transaction_number] = t
             else:
                 self.abort(transaction_number)
                 self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
                 print("Transaction "+str(transaction_number)+" aborted")
-
-            ## Release all locks for transaction_number
-            locker = LockMechanism()
-            locker.release_all_locks(transaction_number,self.sites)
-
-            # Release all dependencies
-            self.clear_dependencies(transaction_number)
         else:
             # Can't end transaction since its blocked
             op = Operation("end",self.time,transaction_number)
@@ -287,11 +340,29 @@ class TransactionManager:
         if self.activeTransactions.get(transaction_number)!= None:
             t = self.activeTransactions.pop(transaction_number)
             t.endTime = self.time
+            ## Release all locks for transaction_number
+            self.lock_system.release_all_locks(transaction_number,self.sites)
+
+            # Release all dependencies
+            self.clear_dependencies(transaction_number)
+            self.delete_blocked_ops(transaction_number)
             self.expiredTransactions[transaction_number] = t
         elif self.blockedTransactions.get(transaction_number)!= None:
             t = self.blockedTransactions.pop(transaction_number)
             t.endTime = self.time
+            ## Release all locks for transaction_number
+            self.lock_system.release_all_locks(transaction_number,self.sites)
+
+            # Release all dependencies
+            self.clear_dependencies(transaction_number)
+            self.delete_blocked_ops(transaction_number)
             self.expiredTransactions[transaction_number] = t
+        return
+
+    def delete_blocked_ops(self, transaction_number):
+        ops = [ op for op in self.blockedOperations if op.transactionNumber == transaction_number]
+        for op in ops:
+            self.blockedOperations.remove(op)
         return
 
     def commit(self, transaction):
@@ -386,14 +457,16 @@ class TransactionManager:
         if eachOperation.startswith("begin("):
             transactionNum = (eachOperation.split("("))[1][1:-2]
             opType = eachOperation[:5]
-            print("Starting Transaction "+str(transactionNum))
+            if self.debug:
+                print("Starting Transaction "+str(transactionNum))
             self.beginTransaction(transactionNum, opType)
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
             transactionNum = (eachOperation.split("("))[1][1:-2]
             opType = eachOperation[:7]
-            print("Starting Read-Only Transaction "+str(transactionNum))
+            if self.debug:
+                print("Starting Read-Only Transaction "+str(transactionNum))
             self.beginROTransaction(transactionNum, opType)
             # print("Insert beginRO() function")
 
@@ -401,7 +474,8 @@ class TransactionManager:
             #insert site fail function fail(2)
             site = self.extract_id_from_operation(eachOperation)
             self.fail(eachOperation[int(site)])
-            print("Site" +str(site) +" fail")
+            if self.debug:
+                print("Site" +str(site) +" fail")
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute read() function
@@ -423,7 +497,12 @@ class TransactionManager:
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
             ### Get transaction id
-            self.end_transaction((eachOperation.split("("))[1][1:-2])
+            temp = eachOperation.split("(")[1]
+            # if self.debug:
+            #     print(eachOperation)
+            #     temp = eachOperation.split("(")[1]
+            #     print(temp.split(")")[0][1])
+            self.end_transaction(temp.split(")")[0][1])
         
         elif eachOperation.startswith("recover("):
             #eg. recover(2) => recover site 2.
@@ -436,7 +515,8 @@ class TransactionManager:
             else:
                 return
             self.recover(eachOperation[int(site)])
-            print("Site "+str(site)+" Recovered")
+            if self.debug:
+                print("Site "+str(site)+" Recovered")
 
         elif eachOperation == "dump()":
             self.dump()
