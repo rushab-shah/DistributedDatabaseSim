@@ -10,6 +10,7 @@ class DataManager:
     def __init__(self,site_num) -> None:
         self.site_number = site_num
         self.is_down = True
+        self.lock_table = []
         
     def erase_locktable(self):
         self.lock_table = []

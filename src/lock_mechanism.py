@@ -12,8 +12,6 @@ class LockMechanism:
 
     def has_lock(self, transaction_number, variable, sites):
         present_all_sites = False
-        if self.debug:
-            print("CHECK "+str(variable))
         if int(variable) % 2 ==0:
             present_all_sites = True
         if present_all_sites:
@@ -45,7 +43,7 @@ class LockMechanism:
             lock = Lock(lock_type,variable,index+1,transaction_number)
             if self.debug:
                 print("Obtaining "+str(self.lock_dict[lock_type])+" lock for T"+str(transaction_number)+" for variable x"+str(variable) +" at site "+str(index+1))
-            sites[i].lock_table.append(lock)
+            sites[index].lock_table.append(lock)
             return lock
         else:
             site_num = (1+ int(variable)%10)
@@ -78,38 +76,41 @@ class LockMechanism:
                 site.lock_table.remove(lock)
         return
     
-    def is_read_locked(self, variable, sites):
+    def is_read_locked(self, variable, sites, requesting_transaction):
         present_all_sites = False
         if int(variable)%2 ==0:
             present_all_sites = True
         if present_all_sites:
             locks = []
             for site in sites:
-                temp = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==0]
+                temp = [lock for lock in site.lock_table if lock.variable==variable and lock.transaction!=requesting_transaction  and lock.lockType==0]
                 if(len(temp)>0):
-                    locks.append(temp)
+                    locks += temp
             if len(locks) > 0:
                 return locks
+            else:
+                return None
         else:
             site_number = 1 + int(variable)%10
-            locks = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==0]
+            locks = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.transaction!=requesting_transaction and lock.lockType==0]
             if(len(locks)>0):
                 return locks
-        return None
+            else:
+                return None
     
-    def is_write_locked(self, variable, sites):
+    def is_write_locked(self, variable, sites, requesting_transaction):
         present_all_sites = False
         if int(variable)%2 ==0:
             present_all_sites = True
         if present_all_sites:
             lock = []
             for site in sites:
-                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.lockType==1]
+                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.transaction!=requesting_transaction and lock.lockType==1]
                 if(len(lock)>0):
                     return lock[0]
         else:
             site_number = 1 + int(variable)%10
-            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.lockType==1]
+            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.transaction!=requesting_transaction and lock.lockType==1]
             if(len(lock)>0):
                 return lock[0]
         return None
