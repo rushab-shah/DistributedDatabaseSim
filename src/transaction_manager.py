@@ -165,12 +165,11 @@ class TransactionManager:
             if self.debug:
                 print("Transaction T"+str(transactionNum)+" is read only")
             start_time = t.beginTime
-            if self.read_correct_version(variable_Name,start_time, transactionNum):
-                if self.debug:
-                    print("RO successful")
-            else:
-                if self.debug:
-                    print("RO op Failed")
+            read_success = self.read_correct_version(variable_Name,start_time, transactionNum)
+            # if read_success and self.debug:
+            #         print("RO successful")
+            # else:
+            #         print("RO op Failed")
             return
 
     def read_correct_version(self, variable, start_time, transactionNum):
@@ -191,16 +190,6 @@ class TransactionManager:
                 print("Aborting read only transaction T"+str(transactionNum))
             self.abort(transactionNum)
         return False
-
-    # def find_commit_index(self,start_time, site_num,variable):
-    #     if self.debug:
-    #         print("Start time "+str(start_time)+"\nSite Num "+str(site_num)+" variable x"+str(variable))
-    #     for commit in self.sites[site_num-1].commit_history:
-    #         if int(commit.variable_name) == int(variable):
-    #             print("Committed x"+str(commit.variable_name)+" at "+str(commit.time))
-
-    #     return -1
-
 
     def get_site_for_ro(self, variable, start_time):
         if int(variable)%2==0:
@@ -339,8 +328,8 @@ class TransactionManager:
         return
 
     def clear_dependencies(self,expiring_transaction):
-        if self.debug:
-            print("Clearing dependencies for transaction "+str(expiring_transaction))
+        # if self.debug:
+        #     print("Clearing dependencies for transaction "+str(expiring_transaction))
         edges = [ e for e in self.dependency_graph_edges if e[1]==expiring_transaction]
         for edge in edges:
             self.dependency_graph_edges.remove(edge)
@@ -370,12 +359,12 @@ class TransactionManager:
 
     ######################################################################
     ## transaction end methods: end transaction, abort, commit, can commit
-    ######################################################################
+    #####################################################################
     def end_transaction(self,transaction_number):
         if self.blockedTransactions.get(transaction_number) == None:
             if(self.can_commit(transaction_number)):
-                if self.debug:
-                    print("Transaction "+str(transaction_number)+" can commit")
+                # if self.debug:
+                #     print("Transaction "+str(transaction_number)+" can commit")
                 t = self.activeTransactions.pop(transaction_number)
                 t.endTime = self.time
                 self.commit(t)
@@ -387,11 +376,11 @@ class TransactionManager:
                 self.expiredTransactions[transaction_number] = t
             else:
                 self.abort(transaction_number)
-                self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
-                print("Transaction "+str(transaction_number)+" aborted")
+                # self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
+                print("T"+str(transaction_number)+" aborts")
             # Resume blocked ops
-            if self.debug:
-                print("Resuming any blocked ops")
+            # if self.debug:
+            #     print("Resuming any blocked ops")
             self.finish_remaining_operations()
         else:
             # Can't end transaction since its blocked
@@ -449,7 +438,7 @@ class TransactionManager:
                     self.sites[site_num-1].var_store[index].value = variable_val
                     self.sites[site_num-1].var_store[index].last_commit_time = self.time
                     self.sites[site_num-1].commit_history.append(Commit(int(transaction),int(variable),int(variable_val),self.time))
-        print("Transaction "+str(transaction.transactionNumber)+" commited")
+        print("T"+str(transaction.transactionNumber)+" commits")
         return
     
     def can_commit(self, transaction_number):
@@ -520,10 +509,21 @@ class TransactionManager:
     ######################################################################
     def fail(self, site_number):
         if site_number < len(self.sites):
+            # block transactions that had locks
+            self.abort_transactions_at_site(site_number)
             self.sites[site_number-1].fail()
             incident_object = Incident(site_number,"fail",self.time)
             self.site_incidents.append(incident_object)
             # Post failure steps
+        return
+
+    def abort_transactions_at_site(self, site_num):
+        transactions_to_abort = set()
+        for lock in self.sites[site_num-1].lock_table:
+            transactions_to_abort.add(lock.transaction)
+        for transaction in transactions_to_abort:
+            self.abort(transaction)
+            print("T"+str(transaction)+" aborts")
         return
 
     def recover(self, site_number):
@@ -532,8 +532,8 @@ class TransactionManager:
             incident_object = Incident(site_number,"recover",self.time)
             self.site_incidents.append(incident_object)
             self.reset_read_availability(site_number)
-            if self.debug:
-                print("Resuming any blocked ops")
+            # if self.debug:
+            #     print("Resuming any blocked ops")
             self.finish_remaining_operations()
             # Post recovery steps
         return
