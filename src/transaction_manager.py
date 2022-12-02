@@ -483,7 +483,7 @@ class TransactionManager:
             opType = split_readOp[0]
             txn_and_var = split_readOp[1].split(",")
             txn = txn_and_var[0][1:]
-            var_x = txn_and_var[1][1:]
+            var_x = txn_and_var[1].split(")")[0][1:]
             self.readOp(opType, txn, var_x)
 
         elif eachOperation.startswith("W("):
