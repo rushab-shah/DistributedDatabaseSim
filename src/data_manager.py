@@ -1,11 +1,10 @@
+from incident import Incident
 
 class DataManager:
     site_number = None
     lock_table = []
     var_store = []
     is_down = True
-
-    ## TODO method to add lock
 
     def __init__(self,site_num) -> None:
         self.site_number = site_num
@@ -18,13 +17,11 @@ class DataManager:
 
     def fail(self):
         self.is_down = True
-        ## TODO WHAT ELSE?
         self.erase_locktable()
         return
 
     def recover(self):
         self.is_down = False
-        ## TODO WHAT ELSE?
         return
 
     def isSiteDown(self):
@@ -37,6 +34,5 @@ class DataManager:
     def set_var_array(self,var_array):
         self.var_store = var_array
         return
-
 
     

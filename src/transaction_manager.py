@@ -6,6 +6,7 @@ from variable import Variable
 from lock import Lock
 from lock_mechanism import LockMechanism
 import networkx as nx
+from incident import Incident
 
 class TransactionManager:
     isReadOnly = False
@@ -21,7 +22,7 @@ class TransactionManager:
     dependency_graph = nx.DiGraph()
     check_deadlock = False
     debug = False
-    
+    site_incidents = []
     time = 0
 
     def operations_left(self):
@@ -81,10 +82,10 @@ class TransactionManager:
         var_store = []
         for id in range(1,21):
             if id % 2 == 0:
-                var_obj = Variable(id*10,id)
+                var_obj = Variable(id*10,id,self.time)
                 var_store.append(var_obj)
             elif site_number == (1 + id % 10):
-                var_obj = Variable(id*10,id)
+                var_obj = Variable(id*10,id,self.time)
                 var_store.append(var_obj)
         self.sites[site_number-1].set_var_array(var_store)
         self.sites[site_number-1].is_down = False
@@ -117,7 +118,7 @@ class TransactionManager:
         if t.isReadOnly == False:
             currTxnHasLock = self.lock_system.has_lock(transactionNum, variable_Name, self.sites)
             if currTxnHasLock == None:
-                lockedByOtherTransactions = self.lock_system.is_write_locked(variable_Name, self.sites)
+                lockedByOtherTransactions = self.lock_system.is_write_locked(variable_Name, self.sites, transactionNum)
                 if lockedByOtherTransactions != None:
                     #Set lock for transaction txn to R
                     if self.debug:
@@ -351,12 +352,14 @@ class TransactionManager:
                     if(len(target_var)==1):
                         index = site.var_store.index(target_var[0])
                         site.var_store[index].value = variable_val
+                        site.var_store[index].last_commit_time = self.time
             else:
                 site_num = 1 + int(variable)%10
                 target_var = [v for v in self.sites[site_num-1].var_store if v.id == variable]
                 if(len(target_var)==1):
                     index = self.sites[site_num-1].var_store.index(target_var[0])
                     self.sites[site_num-1].var_store[index].value = variable_val
+                    self.sites[site_num-1].var_store[index].last_commit_time = self.time
         print("Transaction "+str(transaction.transactionNumber)+" commited")
         return
     
@@ -405,15 +408,19 @@ class TransactionManager:
     ######################################################################
     ## Site specific functions: fail, recover
     ######################################################################
-    def fail(self, index):
-        if index < len(self.sites):
-            self.sites[index-1].fail()
+    def fail(self, site_number):
+        if site_number < len(self.sites):
+            self.sites[site_number-1].fail()
+            incident_object = Incident(site_number,"fail",self.time)
+            self.site_incidents.append(incident_object)
             # Post failure steps
         return
 
-    def recover(self, index):
-        if index < len(self.sites):
-            self.sites[index-1].recover()
+    def recover(self, site_number):
+        if site_number < len(self.sites):
+            self.sites[site_number-1].recover()
+            incident_object = Incident(site_number,"recover",self.time)
+            self.site_incidents.append(incident_object)
             # Post recovery steps
         return
 
@@ -448,10 +455,10 @@ class TransactionManager:
 
         elif eachOperation.startswith("fail("):
             #insert site fail function fail(2)
-            site = self.extract_id_from_operation(eachOperation)
-            self.fail(eachOperation[int(site)])
+            ind = self.extract_id_from_operation(eachOperation)
+            self.fail(eachOperation[int(ind)])
             if self.debug:
-                print("Site" +str(site) +" fail")
+                print("Site" +str(eachOperation[int(ind)]) +" fail")
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute read() function

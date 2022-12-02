@@ -1,6 +1,6 @@
 
 class Variable:
-    def __init__(self, value, id) -> None:
+    def __init__(self, value, id, time) -> None:
         self.value = value
         self.id = id
-        ## Time? Commited history?
+        self.last_commit_time = time
