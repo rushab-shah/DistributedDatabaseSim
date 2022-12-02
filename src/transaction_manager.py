@@ -479,20 +479,22 @@ class TransactionManager:
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute read() function
-            split_readOp = eachOperation.split(",")
-            opType = eachOperation[0]
-            txn = split_readOp[0][3:]
-            var_x = split_readOp[1][1:-1]
+            split_readOp = eachOperation.split("(")
+            opType = split_readOp[0]
+            txn_and_var = split_readOp[1].split(",")
+            txn = txn_and_var[0][1:]
+            var_x = txn_and_var[1][1:]
             self.readOp(opType, txn, var_x)
 
         elif eachOperation.startswith("W("):
             #Write operation. eg. W(T2,x8,88) . Execute write() function
-            split_writeOp = eachOperation.split(",")
-            opType = eachOperation[0]
-            txn = split_writeOp[0][3:]
-            var_x = split_writeOp[1][1:]
-            write_val = split_writeOp[2][:-2]
-            self.writeOp(opType, txn, var_x, write_val)
+            split_writeOp = eachOperation.split("(")
+            opType = split_writeOp[0]
+            txn_var_val = split_writeOp[1].split(",")
+            txn = txn_var_val[0][1:]
+            var_x = txn_var_val[1][1:]
+            value_x = txn_var_val[2].split(")")[0]
+            self.writeOp(opType, txn, var_x, value_x)
         
         elif eachOperation.startswith("end("):
             #Transaction t ends. Execute end() function
