@@ -16,12 +16,16 @@ def main():
 
 def parse_from_file(file_path):
     try:
-        print("File "+file_path)
+        # print("File "+file_path)
         input_file = open(file_path,'r')
         for line in input_file:
             if(check_for_unnecessary_lines(line)):
                 tm_obj.opProcess(line)
-        print("Read complete")
+        # while(tm_obj.operations_left()):
+        #     ## Wait till all operations done
+        #     .
+        
+        print("\nCompleted Processing")
         input_file.close()
     except FileNotFoundError:
         print("Invalid File Path")
