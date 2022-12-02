@@ -4,3 +4,4 @@ class Variable:
         self.value = value
         self.id = id
         self.last_commit_time = time
+        self.available_for_read = True

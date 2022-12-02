@@ -35,9 +35,17 @@ class LockMechanism:
         if all_sites:
             index = -1
             for i in range(0,len(sites)):
+                ##TODO Also check for read availability???
                 if sites[i].isSiteDown() != True:
-                    index = i
-                    break
+                    var_ind = [ind for ind, x in enumerate(sites[i].var_store) if x.id == variable]
+                    # if self.debug:
+                    #     print("CHECK  "+str(var_ind))
+                    if len(var_ind) == 0:
+                        index = i
+                        break
+                    elif len(var_ind)==1 and sites[i].var_store[var_ind[0]].available_for_read:
+                        index = i
+                        break
             if index == -1:
                 return None
             lock = Lock(lock_type,variable,index+1,transaction_number)

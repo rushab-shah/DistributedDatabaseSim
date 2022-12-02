@@ -132,6 +132,12 @@ class TransactionManager:
                     if read_lock != None:
                         if self.debug:
                             print("Got read lock at "+str(read_lock.site))
+
+                        index = [ind for ind, x in enumerate(self.sites[read_lock.site-1].var_store) if x.id == variable_Name]
+                        if(len(index)==1):
+                            print("x"+str(variable_Name)+":"+str(self.sites[read_lock.site-1].var_store[index].value))
+                        
+                        self.activeTransactions[transactionNum].first_accessed_site(read_lock.site, self.time)
                         return
                     else:
                         # Block or Abort?
@@ -142,6 +148,10 @@ class TransactionManager:
                         self.activeTransactions.pop(transactionNum)
                         return
             else:
+                # currTxnHasLock
+                index = [ind for ind, x in enumerate(self.sites[currTxnHasLock.site-1].var_store) if x.id == variable_Name]
+                if(len(index)==1):
+                    print("x"+str(variable_Name)+":"+str(self.sites[currTxnHasLock.site-1].var_store[index].value))
                 if self.debug:
                     print("Transaction T"+str(transactionNum)+" already has a lock on variable x"+str(variable_Name))
                 return
@@ -187,6 +197,7 @@ class TransactionManager:
                 if newLock != None:
                     self.operationHistory.append(o)
                     t.add_to_commit(o)
+                    self.activeTransactions[transaction_num].first_accessed_site(newLock.site, self.time)
                     if self.debug:
                         print("Transaction "+transaction_num+" writes value "+str(x_value)+" to variable x"+str(variable_name))
                 else:
@@ -353,6 +364,7 @@ class TransactionManager:
                         index = site.var_store.index(target_var[0])
                         site.var_store[index].value = variable_val
                         site.var_store[index].last_commit_time = self.time
+                        self.set_read_availability(site.site_number,variable)
             else:
                 site_num = 1 + int(variable)%10
                 target_var = [v for v in self.sites[site_num-1].var_store if v.id == variable]
@@ -368,7 +380,28 @@ class TransactionManager:
         for site in self.sites:
             if site.isSiteDown() == True:
                 return False
+        
+        if self.check_if_site_ever_failed(transaction_number):
+            if self.debug:
+                print("Site failed since first access")
+            return False
         return True
+
+    def check_if_site_ever_failed(self,transaction_num):
+        t = self.activeTransactions[transaction_num]
+        if len(t.site_first_access_record) > 0:
+            for site in t.site_first_access_record:
+                first_access = t.site_first_access_record.get(site)
+                if  first_access!= None and self.failure_in_time_range(site,first_access):
+                    return True
+        return False
+
+    def failure_in_time_range(self,site_number,first_access):
+        incidents = [x for x in self.site_incidents if x.site_number == site_number and x.incident_type=="fail"
+         and x.time_of_occurence > first_access]
+        if len(incidents) > 0:
+            return True
+        return False    
 
     def dump(self):
         for site in self.sites:
@@ -421,10 +454,20 @@ class TransactionManager:
             self.sites[site_number-1].recover()
             incident_object = Incident(site_number,"recover",self.time)
             self.site_incidents.append(incident_object)
+            self.reset_read_availability(site_number)
             # Post recovery steps
         return
 
+    def reset_read_availability(self,site_number):
+        for data in self.sites[site_number-1].var_store:
+            if int(data.id)%2 == 0:
+                data.available_for_read = False
+        return
 
+    def set_read_availability(self,site_number,variable):
+        index = [ind for ind, x in enumerate(self.sites[site_number-1].var_store) if x.id==variable][0]
+        self.sites[site_number-1].var_store[index].available_for_read = True
+        return
     ######################################################################
     ## Method to process op strings from file/cmd: opProcess
     ######################################################################
