@@ -216,7 +216,8 @@ class TransactionManager:
             # Now checking for site failures between commit_time and start_time
             candidate_site = -1
             for site in self.sites:
-                failures = [x for x in self.site_incidents if x.site_number == site.site_number and x.time < start_time and x.time > commit_time]
+                failures = [x for x in self.site_incidents if int(x.site_number) == int(site.site_number) 
+                            and int(x.time) < int(start_time) and int(x.time) > int(commit_time)]
                 if len(failures) == 0:
                     return site.site_number
             if candidate_site == -1:
@@ -517,7 +518,7 @@ class TransactionManager:
         return False
 
     def failure_in_time_range(self,site_number,first_access):
-        incidents = [x for x in self.site_incidents if x.site_number == site_number and x.incident_type=="fail"
+        incidents = [x for x in self.site_incidents if int(x.site_number) == int(site_number) and x.incident_type=="fail"
          and x.time_of_occurence > first_access]
         if len(incidents) > 0:
             return True

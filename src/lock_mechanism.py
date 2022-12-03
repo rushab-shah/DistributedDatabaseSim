@@ -17,12 +17,12 @@ class LockMechanism:
         if present_all_sites:
             for site in sites:
                 for lock in site.lock_table:
-                    if lock.variable == variable and lock.transaction == transaction_number:
+                    if int(lock.variable) == int(variable) and int(lock.transaction) == int(transaction_number):
                         return lock
         else:
             site_num = 1 + int(variable)%10
             for lock in sites[site_num-1].lock_table:
-                if lock.variable == variable and lock.transaction == transaction_number:
+                if int(lock.variable) == int(variable) and int(lock.transaction) == int(transaction_number):
                     return lock
         return None
 
@@ -119,7 +119,7 @@ class LockMechanism:
         if present_all_sites:
             locks = []
             for site in sites:
-                temp = [lock for lock in site.lock_table if lock.variable==variable and lock.transaction!=requesting_transaction  and lock.lockType==0]
+                temp = [lock for lock in site.lock_table if int(lock.variable)==int(variable) and int(lock.transaction)!=int(requesting_transaction)  and int(lock.lockType)==0]
                 if(len(temp)>0):
                     locks += temp
             if len(locks) > 0:
@@ -128,7 +128,7 @@ class LockMechanism:
                 return None
         else:
             site_number = 1 + int(variable)%10
-            locks = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.transaction!=requesting_transaction and lock.lockType==0]
+            locks = [lock for lock in sites[site_number-1].lock_table if int(lock.variable)==int(variable) and int(lock.transaction)!=int(requesting_transaction) and int(lock.lockType)==0]
             if(len(locks)>0):
                 return locks
             else:
@@ -141,12 +141,12 @@ class LockMechanism:
         if present_all_sites:
             lock = []
             for site in sites:
-                lock = [lock for lock in site.lock_table if lock.variable==variable and lock.transaction!=requesting_transaction and lock.lockType==1]
+                lock = [lock for lock in site.lock_table if int(lock.variable)==int(variable) and int(lock.transaction)!=int(requesting_transaction) and int(lock.lockType)==1]
                 if(len(lock)>0):
                     return lock[0]
         else:
             site_number = 1 + int(variable)%10
-            lock = [lock for lock in sites[site_number-1].lock_table if lock.variable==variable and lock.transaction!=requesting_transaction and lock.lockType==1]
+            lock = [lock for lock in sites[site_number-1].lock_table if int(lock.variable)==int(variable) and int(lock.transaction)!=int(requesting_transaction) and int(lock.lockType)==1]
             if(len(lock)>0):
                 return lock[0]
         return None
