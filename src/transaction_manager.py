@@ -649,8 +649,8 @@ class TransactionManager:
             #insert site fail function fail(2)
             site_str = (eachOperation.split("("))[1]
             site_num = site_str.split(")")[0].strip()
-            self.fail(int(site_num))
             print("Site " +str(site_num) +" fails")
+            self.fail(int(site_num))
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute read() function
@@ -681,9 +681,8 @@ class TransactionManager:
             #eg. recover(2) => recover site 2.
             site_str = (eachOperation.split("("))[1]
             site_num = site_str.split(")")[0].strip()
-
-            self.recover(int(site_num))
             print("Site "+str(site_num)+" recovers")
+            self.recover(int(site_num))
 
         elif eachOperation.strip() == "dump()":
             self.dump()
