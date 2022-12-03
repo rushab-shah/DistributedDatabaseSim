@@ -395,7 +395,7 @@ class TransactionManager:
         # Abort the youngest transaction
         min_age = 99999999
         transaction_to_abort = -1
-        transactions_to_check = self.activeTransactions | self.blockedTransactions
+        transactions_to_check = {**self.activeTransactions, **self.blockedTransactions}
         for tnum in transactions_to_check.keys():
             if self.get_transaction_age(tnum) < min_age:
                 min_age = self.get_transaction_age(tnum)
