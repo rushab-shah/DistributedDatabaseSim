@@ -45,6 +45,7 @@ def parse_from_file(file_path):
             if debug:
                 print("Handling remaining ops")
             tm_obj.finish_remaining_operations()
+            break
         
         print("\nCompleted Processing")
         input_file.close()
