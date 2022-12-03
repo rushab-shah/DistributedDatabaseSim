@@ -133,8 +133,7 @@ class TransactionManager:
                 lockedByOtherTransactions = self.lock_system.is_write_locked(variable_Name, self.sites, transactionNum)
                 if lockedByOtherTransactions != None:
                     #Set lock for transaction txn to R
-                    if self.debug:
-                        print("Transaction blocked because another transaction has a write lock")
+                    print("Transaction blocked because another transaction has a write lock")
                     self.blockedTransactions[transactionNum] = t
                     self.blockedOperations.append(o)
                     self.add_dependency(transactionNum, lockedByOtherTransactions.transaction)
@@ -143,8 +142,7 @@ class TransactionManager:
                     dep = self.check_if_lock_req_in_queue(transactionNum,variable_Name)
                     if dep != None:
                         self.add_dependency(dep[0],dep[1])
-                        if self.debug:
-                            print("Transaction blocked as a prior transaction needs the lock first")
+                        print("Transaction blocked as a prior transaction needs the lock first")
                         self.blockedTransactions[transactionNum] = t
                         self.blockedOperations.append(o)
                         self.activeTransactions.pop(transactionNum)
@@ -157,14 +155,12 @@ class TransactionManager:
 
                             index = [ind for ind, x in enumerate(self.sites[read_lock.site-1].var_store) if int(x.id) == int(variable_Name)]
                             if(len(index)==1):
-                                print("x"+str(variable_Name)+":"+str(self.sites[int(read_lock.site)-1].var_store[index[0]].value))
+                                print("T"+str(transactionNum)+" reads x"+str(variable_Name)+":"+str(self.sites[int(read_lock.site)-1].var_store[index[0]].value))
                             
                             self.activeTransactions[transactionNum].first_accessed_site(read_lock.site, self.time)
                             return
                         else:
-                            # Block or Abort?
-                            if self.debug:
-                                print("Transaction blocked as site is unavailable")
+                            print("Transaction blocked as site is unavailable")
                             self.blockedTransactions[transactionNum] = t
                             self.blockedOperations.append(o)
                             self.activeTransactions.pop(transactionNum)
@@ -173,7 +169,7 @@ class TransactionManager:
                 # currTxnHasLock
                 index = [ind for ind, x in enumerate(self.sites[currTxnHasLock.site-1].var_store) if x.id == variable_Name]
                 if(len(index)==1):
-                    print("x"+str(variable_Name)+":"+str(self.sites[currTxnHasLock.site-1].var_store[index].value))
+                    print("T"+str(transactionNum)+" reads x"+str(variable_Name)+":"+str(self.sites[currTxnHasLock.site-1].var_store[index].value))
                 if self.debug:
                     print("Transaction T"+str(transactionNum)+" already has a lock on variable x"+str(variable_Name))
                 return
@@ -203,7 +199,7 @@ class TransactionManager:
                     print("commit list empty")
         else:
             if self.debug:
-                print("Aborting read only transaction T"+str(transactionNum))
+                print("T"+str(transactionNum)+" aborts")
             self.abort(transactionNum)
         return False
 
@@ -405,7 +401,7 @@ class TransactionManager:
                 min_age = self.get_transaction_age(tnum)
                 transaction_to_abort = tnum
         if transaction_to_abort!=-1:
-            print("Aborted Transaction "+str(transaction_to_abort)+" for handling deadlock")
+            print("Aborted T"+str(transaction_to_abort)+" for handling deadlock")
             self.abort(transaction_to_abort)
         return
 
@@ -429,7 +425,7 @@ class TransactionManager:
             else:
                 self.abort(transaction_number)
                 # self.expiredTransactions[transaction_number] = self.activeTransactions.pop(transaction_number)
-                print("T"+str(transaction_number)+" aborts because can't commit🧐")
+                print("T"+str(transaction_number)+" aborts")
             # Resume blocked ops
             # if self.debug:
             #     print("Resuming any blocked ops")
@@ -535,10 +531,13 @@ class TransactionManager:
 
     def dump(self):
         for site in self.sites:
-            dump_str = "site "+str(site.site_number)+" - "
+            dump_str = "Site "+str(site.site_number)+" - "
             for variable in site.var_store:
                 dump_str += "x"+str(variable.id) +": "+str(variable.value)+", "
-            print(dump_str)
+            if dump_str[-2] == ',':
+                print(dump_str[:-2])
+            else:
+                print(dump_str)
         return
 
     ######################################################################
@@ -632,8 +631,7 @@ class TransactionManager:
             transactionNum_str = (eachOperation.split("("))[1]
             transactionNum = transactionNum_str.split(")")[0].strip()[1:]
             opType = eachOperation[:5]
-            if self.debug:
-                print("Starting Transaction "+str(transactionNum))
+            print("T"+str(transactionNum)+" starts")
             self.beginTransaction(transactionNum, opType)
             
         elif eachOperation.startswith("beginRO("):
@@ -642,7 +640,8 @@ class TransactionManager:
             transactionNum = transactionNum_str.split(")")[0].strip()[1:]
             opType = eachOperation[:7]
             if self.debug:
-                print("Starting Read-Only Transaction "+str(transactionNum))
+                print("T"+str(transactionNum)+" is read-only")
+            print("T"+str(transactionNum)+" starts")
             self.beginROTransaction(transactionNum, opType)
             # print("Insert beginRO() function")
 
@@ -651,9 +650,7 @@ class TransactionManager:
             site_str = (eachOperation.split("("))[1]
             site_num = site_str.split(")")[0].strip()
             self.fail(int(site_num))
-
-            if self.debug:
-                print("Site " +str(site_num) +" fails")
+            print("Site " +str(site_num) +" fails")
 
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute read() function
@@ -678,10 +675,6 @@ class TransactionManager:
             #Transaction t ends. Execute end() function
             ### Get transaction id
             temp = eachOperation.split("(")[1]
-            # if self.debug:
-            #     print(eachOperation)
-            #     temp = eachOperation.split("(")[1]
-            #     print(temp.split(")")[0][1])
             self.end_transaction(temp.split(")")[0].strip()[1])
         
         elif eachOperation.startswith("recover("):
@@ -690,8 +683,7 @@ class TransactionManager:
             site_num = site_str.split(")")[0].strip()
 
             self.recover(int(site_num))
-            if self.debug:
-                print("Site "+str(site_num)+" Recovered")
+            print("Site "+str(site_num)+" recovers")
 
         elif eachOperation.strip() == "dump()":
             self.dump()

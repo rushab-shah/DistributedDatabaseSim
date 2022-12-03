@@ -37,16 +37,16 @@ def main():
         print(getopt.error)
     
     if(len(sys.argv)<2):
-        parse_from_cmd()
+        parse_from_cmd(debug)
     elif(len(sys.argv)==2 and debug):
-        parse_from_cmd()
+        parse_from_cmd(debug)
     else:
         if(debug):
-            parse_from_file(sys.argv[2])
+            parse_from_file(sys.argv[2],debug)
         else:
-            parse_from_file(sys.argv[1])
+            parse_from_file(sys.argv[1],debug)
 
-def parse_from_file(file_path):
+def parse_from_file(file_path, debug):
     try:
         # print("File "+file_path)
         input_file = open(file_path,'r')
@@ -61,12 +61,13 @@ def parse_from_file(file_path):
             tm_obj.finish_remaining_operations()
             break
         
-        print("\nCompleted Processing")
+        if debug:
+            print("\nCompleted Processing")
         input_file.close()
     except FileNotFoundError:
         print("Invalid File Path")
 
-def parse_from_cmd():
+def parse_from_cmd(debug):
     input_op = input()
     while(input_op!="exit"):
         if(check_for_unnecessary_lines(input_op)):
@@ -81,7 +82,6 @@ def parse_from_cmd():
 
 
 def check_for_unnecessary_lines(line):
-    # TODO Add validation for input ops from cmd
     if(line.startswith("//")) or line=="" or line.strip()=="":
         return False
     return True
