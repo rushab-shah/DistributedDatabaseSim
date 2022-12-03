@@ -622,7 +622,8 @@ class TransactionManager:
 
         ##### Begin() Transaction ######
         if eachOperation.startswith("begin("):
-            transactionNum = (eachOperation.split("("))[1][1:-2]
+            transactionNum_str = (eachOperation.split("("))[1]
+            transactionNum = transactionNum_str.split(")")[0].strip()[1:]
             opType = eachOperation[:5]
             if self.debug:
                 print("Starting Transaction "+str(transactionNum))
@@ -630,7 +631,8 @@ class TransactionManager:
             
         elif eachOperation.startswith("beginRO("):
             #beginRO(T3) means T3 txn begins and is read only
-            transactionNum = (eachOperation.split("("))[1][1:-2]
+            transactionNum_str = (eachOperation.split("("))[1]
+            transactionNum = transactionNum_str.split(")")[0].strip()[1:]
             opType = eachOperation[:7]
             if self.debug:
                 print("Starting Read-Only Transaction "+str(transactionNum))
