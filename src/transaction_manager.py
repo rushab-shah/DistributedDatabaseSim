@@ -1,3 +1,12 @@
+## Author: Rushab Shah, Deepali Chugh
+## File: transaction_manager.py
+## Date: 12/03/2022
+## Purpose: The transaction manager (TM) plays a crucial role in the simulation of our system. The transaction manager
+##          is responsible for processing each operation that comes as an input from the input file or command line. 
+##          The transaction manager is responsible for initializing and managing sites. It is responsible for communicating
+##          with the locking mechanism to obtain, release & check for locks. It is responsible for actually carrying out
+##          the operations in a transaction. It also checks for deadlocks, aborts, blocks and commits transactions.
+
 
 from operation import Operation
 from transaction import Transaction

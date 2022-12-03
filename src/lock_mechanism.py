@@ -1,3 +1,10 @@
+## Author: Rushab Shah, Deepali Chugh
+## File: lock_mechanism.py
+## Date: 12/03/2022
+## Purpose: This class is used for simulating a locking system.
+## Key features: Ability to check if there are existing read/write locks on a variable. Checking if a given transaction
+##               has a lock already. There's also functionality to release locks for a transaction.
+
 from lock import Lock
 
 class LockMechanism:

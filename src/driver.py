@@ -1,6 +1,20 @@
-# Author: Rushab Shah
-# Driver code
-# This code is responsible to parse input and send parsed data to TM
+## Author: Rushab Shah, Deepali Chugh
+## File: driver.py
+## Date: 12/03/2022
+## Purpose: This is a driver code meant to internally call our Transaction Manager and simulate transactions
+##          The driver code has an optional file input. If file input isn't provided then input operations are taken
+##          from command line input. The program terminates when user enters "exit" (in case of command line i/p)
+##          Additionally, we have a "-d" option, which is used by the developer for debugging in case of errors.
+##          This option doesn't affect program execution and is simply used for debugging the system.
+##
+## NOTE: The debug option is not needed to view program output statements. The debug option prints additional logic
+##       specific statements
+##
+## The driver code is the first point of execution for this project.
+## Usage: python3.6 driver.py <path_to_input_file>                      [This is for file input scenario ]
+## Usage: python3.6 driver.py                                           [This is for command line scenario ]
+## Usage: python3.6 driver.py -d <path_to_input_file>                   [Usage with debug option on]
+## Usage: python3.6 driver.py -d                                        [Usage with debug option on]
 
 import sys, getopt
 from transaction_manager import TransactionManager

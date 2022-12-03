@@ -1,3 +1,9 @@
+## Author: Rushab Shah, Deepali Chugh
+## File: transaction.py
+## Date: 12/03/2022
+## Purpose: This class is used for modelling a transaction. A transaction has properties such has the associated number
+##          the start and end time, site access records as well as whether or not its ReadOnly
+
 class Transaction:
   # This will contain a blueprint of an operation. Which is each line in the input
   def __init__(self, transactionNumber, isReadOnly, beginTime, endTime = None) -> None:

@@ -1,3 +1,9 @@
+## Author: Rushab Shah, Deepali Chugh
+## File: data_manager.py
+## Date: 12/03/2022
+## Purpose: This class is used for simulating a Site and its associated functions
+## Key functionalities: Initialization, maintaining a lock table, fail, recovery, site status check, adding/removing variables
+##                      Maintaining a commit history for multi-version read
 
 class DataManager:
     site_number = None
