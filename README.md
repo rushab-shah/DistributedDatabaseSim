@@ -1,32 +1,21 @@
-# DistributedDatabaseSim
+# Advanced Database Systems
+## Replicated Concurrency Control and Recovery Project
+Authors: 
 
-Language: 
+	Rushab Rakesh Shah, Deepali Chugh
 
-  - Python
+Language:
+
+	Python
   
-Input & Output:
+Input:
 
-  - text files
+	- Located in inputs/ folder
+	- Text files of the format input[0-9]*.txt
 
-Code Requirements:
+Output:
 
-	- multiversion concurrency control
-		 multiversion read consistency
-	- deadlock detection
-		cycle detection
-	- replication
-		the available copies approach to replication using strict
-		two phase locking (using read and write locks)
-	- failure recovery
-
-Design:
-
-	- Transaction Manager
-	- Data Manager (Site)
-
-Aftermath:
-
-	- Use ReproZip to package code
+	- Output will be printed on the command line
 
 To Submit:
 
