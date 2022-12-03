@@ -10,9 +10,6 @@ from incident import Incident
 from commit import Commit
 
 class TransactionManager:
-    isReadOnly = False
-    processed_data = []
-    wait_list = []
     sites = []
     operationHistory = []
     blockedOperations = []
@@ -642,7 +639,7 @@ class TransactionManager:
         elif eachOperation.startswith("fail("):
             #insert site fail function fail(2)
             site_str = (eachOperation.split("("))[1]
-            site_num = site_str.split(")")[0]
+            site_num = site_str.split(")")[0].strip()
             self.fail(int(site_num))
 
             if self.debug:
@@ -651,20 +648,20 @@ class TransactionManager:
         elif eachOperation.startswith("R("):
             #Read operation. eg. R(T1,x1). Execute read() function
             split_readOp = eachOperation.split("(")
-            opType = split_readOp[0]
+            opType = split_readOp[0].strip()
             txn_and_var = split_readOp[1].split(",")
-            txn = txn_and_var[0][1:]
-            var_x = txn_and_var[1].split(")")[0][1:]
+            txn = txn_and_var[0].strip()[1:]
+            var_x = txn_and_var[1].split(")")[0].strip()[1:]
             self.readOp(opType, txn, var_x)
 
         elif eachOperation.startswith("W("):
             #Write operation. eg. W(T2,x8,88) . Execute write() function
             split_writeOp = eachOperation.split("(")
-            opType = split_writeOp[0]
+            opType = split_writeOp[0].strip()
             txn_var_val = split_writeOp[1].split(",")
-            txn = txn_var_val[0][1:]
-            var_x = txn_var_val[1][1:]
-            value_x = txn_var_val[2].split(")")[0]
+            txn = txn_var_val[0].strip()[1:]
+            var_x = txn_var_val[1].strip()[1:]
+            value_x = txn_var_val[2].split(")")[0].strip()
             self.writeOp(opType, txn, var_x, value_x)
         
         elif eachOperation.startswith("end("):
@@ -675,12 +672,12 @@ class TransactionManager:
             #     print(eachOperation)
             #     temp = eachOperation.split("(")[1]
             #     print(temp.split(")")[0][1])
-            self.end_transaction(temp.split(")")[0][1])
+            self.end_transaction(temp.split(")")[0].strip()[1])
         
         elif eachOperation.startswith("recover("):
             #eg. recover(2) => recover site 2.
             site_str = (eachOperation.split("("))[1]
-            site_num = site_str.split(")")[0]
+            site_num = site_str.split(")")[0].strip()
 
             self.recover(int(site_num))
             if self.debug:
@@ -690,19 +687,3 @@ class TransactionManager:
             self.dump()
 
         return
-
-
-######################################################################
-## Testing code
-######################################################################
-# eachOperation = "R(T1)"
-# tm = TransactionManager()s
-# tm.opProcess(eachOperation)
-
-# tm.add_dependency(0,1)
-# tm.add_dependency(0,2)
-# tm.add_dependency(1,2)
-# tm.add_dependency(2,0)
-# print(tm.detect_deadlocks())
-
-
